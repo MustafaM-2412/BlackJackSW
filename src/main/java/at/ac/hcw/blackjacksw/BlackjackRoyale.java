@@ -96,5 +96,95 @@ public class BlackjackRoyale extends Application{
             cardsArea.getChildren().add(handCol);
         }
     }
+    private void playSeat(int seatIdx) {
+        while (seatIdx < 5 && seats[seatIdx].getMainHand().bet.get() == 0) {
+            seatIdx++;
+        }
 
+        if (seatIdx >= 5) {
+            playDealer();
+            return;
+        }
+
+        SeatModel s = seats[seatIdx];
+        s.isActiveSeat.set(true);
+        s.activeHandIndex.set(0);
+        updateSeatVisuals(seatIdx);
+        checkHandAutoOps(seatIdx);
+    }
+
+    private void checkHandAutoOps(int seatIdx) {
+        SeatModel s = seats[seatIdx];
+        HandData h = s.getCurrentHand();
+        updateSeatVisuals(seatIdx);
+        if (h.getBestValue() >= 21) {
+            Platform.runLater(() -> handleStand(seatIdx));
+        }
+    }
+
+    private void handleHit(int seatIdx) {
+        SeatModel s = seats[seatIdx];
+        HandData h = s.getCurrentHand();
+        h.cards.add(deck.draw());
+        updateSeatVisuals(seatIdx);
+        if (h.getBestValue() >= 21) {
+            handleStand(seatIdx);
+        }
+    }
+
+    private void handleStand(int seatIdx) {
+        SeatModel s = seats[seatIdx];
+        if (s.activeHandIndex.get() < s.hands.size() - 1) {
+            s.activeHandIndex.set(s.activeHandIndex.get() + 1);
+            updateSeatVisuals(seatIdx);
+            checkHandAutoOps(seatIdx);
+        } else {
+            s.isActiveSeat.set(false);
+            updateSeatVisuals(seatIdx);
+            playSeat(seatIdx + 1);
+        }
+    }
+
+    //    Behandelt die Double-Down-Aktion
+//  Der Einsatz wird verdoppelt, der Spieler erhält genau eine weitere Karte und muss danach automatisch stehen.
+    private void handleDouble(int seatIdx) {
+        SeatModel s = seats[seatIdx];
+        HandData h = s.getCurrentHand();
+
+        // Prüft, ob genügend Guthaben zum Verdoppeln vorhanden ist
+        if (balance.get() >= h.bet.get()) {
+            // Einsatz abziehen und verdoppeln
+            balance.set(balance.get() - h.bet.get());
+            h.bet.set(h.bet.get() * 2);
+
+            // Genau eine Karte ziehen
+            h.cards.add(deck.draw());
+            updateSeatVisuals(seatIdx);
+
+            // Nach Doublen automatisch stehen
+            handleStand(seatIdx);
+        }
+    }
+    //    Behandelt die Split-Aktion für einen Sitz.
+// Eine Hand mit zwei gleichen Karten wird in zwei Hände aufgeteilt, jeweils mit einer neuen Karte ergänzt.
+    private void handleSplit(int seatIdx) {
+        SeatModel s = seats[seatIdx];
+        HandData h = s.getCurrentHand();
+        // Prüft, ob genügend Guthaben für den zweiten Einsatz vorhanden ist
+        if (balance.get() >= h.bet.get()) {
+            // Einsatz für die zweite Hand abziehen
+            // Hand in zwei separate Hände aufteilen
+            balance.set(balance.get() - h.bet.get());
+            s.split();
+
+            // Jede neue Hand erhält eine zusätzliche Karte
+            s.hands.get(0).cards.add(deck.draw());
+            s.hands.get(1).cards.add(deck.draw());
+
+            updateSeatVisuals(seatIdx);
+
+            // Prüft automatische Aktionen (z.B. Blackjack, Bust)
+            checkHandAutoOps(seatIdx);
+        }
+    }
 }
