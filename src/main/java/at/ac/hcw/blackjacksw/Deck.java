@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+
 //kümmert sich um Karten
 class Deck {
     private final List<Card> cards = new ArrayList<>();

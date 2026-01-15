@@ -8,6 +8,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 
+
 class ChipView extends StackPane {
     public ChipView(int val, double size, boolean selectable) {
         // Größe setzten vom Chip
