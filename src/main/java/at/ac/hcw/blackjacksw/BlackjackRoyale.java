@@ -147,20 +147,28 @@ public class BlackjackRoyale extends Application{
         overlayLayer.getChildren().add(bg);
     }
 
+//    Startet den Spielzug für einen bestimmten Sitz.
+//  Überspringt Sitze ohne Einsatz und wechselt anschließend zum Dealer
 
     private void playSeat(int seatIdx) {
+
+        // Überspringt Sitze ohne Einsatz
         while (seatIdx < 5 && seats[seatIdx].getMainHand().bet.get() == 0) {
             seatIdx++;
         }
-
+        // Wenn kein gültiger Sitz mehr vorhanden ist, spielt der Dealer
         if (seatIdx >= 5) {
             playDealer();
             return;
         }
 
+        // Aktiviert den aktuellen Sitz
         SeatModel s = seats[seatIdx];
         s.isActiveSeat.set(true);
+        // Startet immer mit der ersten Hand
         s.activeHandIndex.set(0);
+
+        // UI aktualisieren und automatische Prüfungen durchführen
         updateSeatVisuals(seatIdx);
         checkHandAutoOps(seatIdx);
     }
