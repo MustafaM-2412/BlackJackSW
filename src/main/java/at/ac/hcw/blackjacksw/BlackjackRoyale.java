@@ -24,6 +24,27 @@ public class BlackjackRoyale extends Application{
     private Pane[] seatVisualContainers = new Pane[5];
     private HBox[] seatCardHBoxes = new HBox[5];
 
+    @Override
+    public void start(Stage stage) {
+        for (int i = 0; i < 5; i++) {
+            seats[i] = new SeatModel();
+        }
+
+        rootLayer = new StackPane();
+        rootLayer.setStyle("-fx-background-color: " + Styles.BG_COLOR + ";");
+        tableLayer = new AnchorPane();
+        overlayLayer = new StackPane();
+        overlayLayer.setPickOnBounds(false);
+
+        buildTable();
+        rootLayer.getChildren().addAll(tableLayer, overlayLayer);
+        showStartScreen();
+
+        Scene scene = new Scene(rootLayer, 1024, 640);
+        stage.setTitle("BlackJack Royale 2025 - Final");
+        stage.setScene(scene);
+        stage.show();
+    }
 
     private void updateActionButtons(int idx, HBox container, Button hitBtn, Button dblBtn, Button splitBtn) {
         SeatModel s = seats[idx];
@@ -96,6 +117,37 @@ public class BlackjackRoyale extends Application{
             cardsArea.getChildren().add(handCol);
         }
     }
+
+    private void showStartScreen() {
+        overlayLayer.getChildren().clear();
+        overlayLayer.setPickOnBounds(true);
+        tableLayer.setEffect(new GaussianBlur(15));
+
+        StackPane bg = new StackPane();
+        bg.setStyle("-fx-background-color: rgba(0,0,0,0.7);");
+
+        VBox box = Styles.createWhiteModalBox();
+        Text logo = new Text("BlackJack Royale");
+        logo.setFont(Font.font("Arial", FontWeight.BOLD, 30));
+
+        Button start = Styles.createModalButton("Start Game", "CONFIRM");
+        start.setOnAction(e -> {
+            closeOverlay();
+            startBetting();
+        });
+
+        Button rules = Styles.createModalButton("Rules", "GREY");
+        rules.setOnAction(e -> showRules());
+
+        Button exit = Styles.createModalButton("Exit", "CANCEL");
+        exit.setOnAction(e -> Platform.exit());
+
+        box.getChildren().addAll(logo, start, rules, exit);
+        bg.getChildren().add(box);
+        overlayLayer.getChildren().add(bg);
+    }
+
+
     private void playSeat(int seatIdx) {
         while (seatIdx < 5 && seats[seatIdx].getMainHand().bet.get() == 0) {
             seatIdx++;
