@@ -8,13 +8,16 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.effect.GaussianBlur;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.awt.*;
@@ -324,7 +327,135 @@ public class BlackjackRoyale extends Application {
         overlayLayer.getChildren().add(bg);
     }
 
+    private void showBetModal(int seatIdx) {
+        tableLayer.setEffect(new GaussianBlur(15));
+        StackPane overlay = new StackPane();
+        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.5);");
 
+        VBox box = Styles.createWhiteModalBox();
+        javafx.scene.control.Label title = new javafx.scene.control.Label("Place Bet");
+        title.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 18));
+
+        javafx.scene.control.Label bal = new javafx.scene.control.Label("Your balance: " + balance.get());
+        bal.setTextFill(Color.GRAY);
+
+        IntegerProperty tempBet = new SimpleIntegerProperty(seats[seatIdx].getMainHand().bet.get());
+        HBox chips = new HBox(15);
+        chips.setAlignment(Pos.CENTER);
+        int[] values = {5, 10, 25, 50, 100};
+
+        for (int val : values) {
+            ChipView cv = new ChipView(val, 50, true);
+            cv.setOnMouseClicked(e -> {
+                if (balance.get() >= (tempBet.get() + val - seats[seatIdx].getMainHand().bet.get())) {
+                    tempBet.set(tempBet.get() + val);
+                }
+            });
+            chips.getChildren().add(cv);
+        }
+
+        javafx.scene.control.Label curBet = new javafx.scene.control.Label();
+        curBet.textProperty().bind(Bindings.concat("Bet size: ", tempBet));
+
+        HBox buttons = new HBox(20);
+        buttons.setAlignment(Pos.CENTER);
+
+        javafx.scene.control.Button btnCancel = Styles.createModalButton("Cancel", "CANCEL");
+        btnCancel.setOnAction(e -> closeOverlay());
+
+        javafx.scene.control.Button btnBet = Styles.createModalButton("Bet", "CONFIRM");
+        btnBet.setOnAction(e -> {
+            int diff = tempBet.get() - seats[seatIdx].getMainHand().bet.get();
+            if (balance.get() >= diff) {
+                balance.set(balance.get() - diff);
+                seats[seatIdx].getMainHand().bet.set(tempBet.get());
+                updateSeatVisuals(seatIdx);
+            }
+            closeOverlay();
+        });
+
+        buttons.getChildren().addAll(btnCancel, btnBet);
+        box.getChildren().addAll(title, bal, chips, curBet, buttons);
+        overlay.getChildren().add(box);
+        overlayLayer.getChildren().add(overlay);
+        overlayLayer.setPickOnBounds(true);
+    }
+
+    private void showGameOver() {
+        tableLayer.setEffect(new GaussianBlur(15));
+        StackPane overlay = new StackPane();
+        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.5);");
+
+        VBox box = Styles.createWhiteModalBox();
+        javafx.scene.control.Label title = new javafx.scene.control.Label("Game over!");
+        title.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 22));
+
+        javafx.scene.control.Label sub = new javafx.scene.control.Label("You ran out of money!");
+        sub.setTextFill(Color.GRAY);
+
+        javafx.scene.control.Button reset = Styles.createModalButton("Reset Game", "CONFIRM");
+        reset.setOnAction(e -> {
+            balance.set(100);
+            closeOverlay();
+            startBetting();
+        });
+
+        javafx.scene.control.Button exit = Styles.createModalButton("Exit", "CANCEL");
+        exit.setOnAction(e -> Platform.exit());
+
+        box.getChildren().addAll(title, sub, reset, exit);
+        overlay.getChildren().add(box);
+        overlayLayer.getChildren().add(overlay);
+        overlayLayer.setPickOnBounds(true);
+    }
+
+    private void showRules() {
+        StackPane overlay = new StackPane();
+        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.6);");
+        overlay.setPickOnBounds(true);
+
+        VBox box = Styles.createWhiteModalBox();
+        javafx.scene.control.Label t = new javafx.scene.control.Label("House Rules");
+        t.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 22));
+
+        javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane();
+        javafx.scene.control.Label content = new javafx.scene.control.Label(
+                "OBJECTIVE:\nBeat the dealer's hand total without exceeding 21.\n\n" +
+                        "CARD VALUES:\n- 2-10: Face value.\n- J, Q, K: 10.\n- Ace: 1 or 11.\n\n" +
+                        "THE DEAL:\nEveryone gets 2 cards. Dealer has one face down.\n\n" +
+                        "ACTIONS:\n- HIT: Take another card.\n- STAND: End turn.\n- DOUBLE: Double bet, take exactly 1 card, then stand.\n" +
+                        "- SPLIT: If 2 cards are same rank, split into 2 hands (requires equal bet). You play each hand separately.\n\n" +
+                        "DEALER:\nDealer stands on all 17s. Dealer hits on 16.\n\n" +
+                        "PAYOUTS:\nWin 1:1. Blackjack 3:2. Push means tie (bet returned).\n\n" +
+                        "BUST:\nOver 21 is an immediate loss."
+        );
+        content.setWrapText(true);
+        content.setFont(javafx.scene.text.Font.font("Arial", 14));
+        content.setPadding(new Insets(15));
+
+        sp.setContent(content);
+        sp.setFitToWidth(true);
+        sp.setPrefHeight(350);
+        sp.setStyle("-fx-background: white; -fx-background-color: transparent;");
+
+        javafx.scene.control.Button cl = Styles.createModalButton("Close", "GREY");
+        cl.setOnAction(e -> {
+            overlayLayer.getChildren().remove(overlay);
+            if (gameState.get() != GameState.START_SCREEN) overlayLayer.setPickOnBounds(false);
+            if (gameState.get() == GameState.BETTING) tableLayer.setEffect(null);
+        });
+
+        box.getChildren().addAll(t, sp, cl);
+        overlay.getChildren().add(box);
+        overlayLayer.getChildren().add(overlay);
+    }
+
+    //schließt alles
+    private void closeOverlay() {
+        overlayLayer.getChildren().clear();
+        overlayLayer.setPickOnBounds(false);
+        tableLayer.setEffect(null);
+    }
     private void playSeat(int seatIdx) {
         while (seatIdx < 5 && seats[seatIdx].getMainHand().bet.get() == 0) {
             seatIdx++;
