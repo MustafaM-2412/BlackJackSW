@@ -327,6 +327,8 @@ public class BlackjackRoyale extends Application {
         overlayLayer.getChildren().add(bg);
     }
 
+
+
     private void showBetModal(int seatIdx) {
         tableLayer.setEffect(new GaussianBlur(15));
         StackPane overlay = new StackPane();
