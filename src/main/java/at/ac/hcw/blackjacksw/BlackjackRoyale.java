@@ -751,6 +751,64 @@ public class BlackjackRoyale extends Application {
             dt.play(); // Startet Animation
         }
     }
+
+    /*
+     * Auswertung der Runde (Gewinn/Verlust).
+     * Vergleicht Punkte und verteilt Geld.
+     */
+
+    private void resolve() {
+        int dVal = dealerHand.getBestValue();
+        boolean dBust = dealerHand.isBusted();
+        boolean dBJ = dealerHand.isBlackjack();
+
+        for (int i = 0; i < 5; i++) {
+            SeatModel s = seats[i];
+            for (HandData h : s.hands) {
+                if (h.bet.get() == 0) continue; // Nur wetten auswerten
+
+                int pVal = h.getBestValue();
+                boolean pBJ = h.isBlackjack();
+                String msg;
+                int win = 0;
+
+                if (h.isBusted()) {
+                    msg = "LOST"; // Spieler hat überzogen
+                } else if (pBJ) {
+                    if (dBJ) {
+                        msg = "PUSH"; // Unentschieden (beide Blackjack)
+                        win = h.bet.get();
+                    } else {
+                        msg = "WIN (BJ)"; // Spieler Blackjack (zahlt 3:2)
+                        win = (int) (h.bet.get() * 2.5);
+                    }
+                } else if (dBust) {
+                    msg = "WON"; // Dealer hat überzogen, Spieler gewinnt
+                    win = h.bet.get() * 2;
+                } else if (pVal > dVal) {
+                    msg = "WON"; // Spieler hat mehr Punkte als Dealer
+                    win = h.bet.get() * 2;
+                } else if (pVal == dVal) {
+                    msg = "PUSH"; // Gleichstand
+                    win = h.bet.get();
+                } else {
+                    msg = "LOST";
+                }
+
+                h.statusMsg.set(msg);
+                if (win > 0) balance.set(balance.get() + win);
+            }
+            updateSeatVisuals(i);
+        }
+        // Warte 4 Sekunden, dann Neustart oder Game Over
+        PauseTransition pt = new PauseTransition(Duration.seconds(4));
+        pt.setOnFinished(e -> {
+            if (balance.get() <= 0) showGameOver();
+            else startBetting();
+        });
+        pt.play();
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
