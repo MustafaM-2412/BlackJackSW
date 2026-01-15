@@ -238,8 +238,14 @@ public class BlackjackRoyale extends Application {
         seatGroup.getChildren().addAll(bg, pb, interact, cardsArea, actions);
         tableLayer.getChildren().add(seatGroup);
     }
+
+    /*
+     * Steuert die Buttons (Hit, Stand, Double, Split).
+     * Aktiviert oder deaktiviert sie basierend auf den Spielregeln und dem Guthaben.
+     */
     private void updateActionButtons(int idx, HBox container, Button hitBtn, Button dblBtn, Button splitBtn) {
         SeatModel s = seats[idx];
+        // Abbruch, wenn der Sitz gar nicht am Zug ist
         if (!s.isActiveSeat.get()) return;
 
         HandData currentHand = s.getCurrentHand();
@@ -247,60 +253,84 @@ public class BlackjackRoyale extends Application {
 
         container.setVisible(true);
 
+        // Prüft, ob der Spieler schon 21 oder mehr Punkte hat
         boolean is21 = currentHand.getBestValue() >= 21;
 
+        // Regel: Wer 21 hat, darf keine Karte mehr ziehen
         hitBtn.setDisable(is21);
+
+        // Regel: Double Down geht nur bei den ersten 2 Karten, wenn man genug Geld hat und noch nicht bei 21 ist.
         dblBtn.setDisable(is21 || balance.get() < currentHand.bet.get() || currentHand.cards.size() > 2);
 
+        // Regel: Split ist erlaubt, wenn:
+        // 1. Die Karten den gleichen Rang haben (z.B. 8 und 8)
+        // 2. Genug Geld für den zweiten Einsatz da ist
+        // 3. Man nicht bereits gesplittet hat (wir erlauben nur max. 2 Hände)
         boolean canSplit = currentHand.canSplit() &&
                 balance.get() >= currentHand.bet.get() &&
                 s.hands.size() == 1;
 
+        // Zeige den Split-Button nur an, wenn er auch benutzt werden dar
         splitBtn.setVisible(canSplit);
         splitBtn.setManaged(canSplit);
     }
 
+    /*
+     * Methode für Grafik-Updates  Sitzplatzes.
+     * Synchronisiert das Datenmodell (SeatModel) mit der Anzeige (Pane).
+     * Wird immer aufgerufen, wenn sich Daten ändern.
+     */
     private void updateSeatVisuals(int idx) {
         SeatModel s = seats[idx];
         Pane group = seatVisualContainers[idx];
+
+        // Zugriff auf die UI-Elemente im Container (Chips, Labels, Kartenbereich)
         StackPane interact = (StackPane) group.getChildren().get(2);
         Label pb = (Label) group.getChildren().get(1);
         HBox cardsArea = (HBox) group.getChildren().get(3);
 
+        //  Chips und Einsatzanzeige
         interact.getChildren().clear();
         int totalBet = s.hands.stream().mapToInt(h -> h.bet.get()).sum();
 
         if (totalBet > 0) {
-            pb.setVisible(false);
+            pb.setVisible(false); // Verstecke "Place Bet" Text
             ChipView cv = new ChipView(totalBet > 0 ? s.getMainHand().bet.get() : 0, 45, false);
             Label l = new Label("Bet: " + totalBet);
             l.setStyle("-fx-text-fill: white; -fx-effect: dropshadow(one-pass-box, black, 2,0,0,1);");
             l.setTranslateY(150);
             interact.getChildren().addAll(cv, l);
+
+            // Wenn wir in der Wettphase sind und gewettet wurde -> Deal Button anzeigen
             if (gameState.get() == GameState.BETTING) btnDeal.setVisible(true);
         } else {
-            pb.setVisible(true);
+            pb.setVisible(true); // Zeige "Place Bet", wenn kein Einsatz da ist
         }
 
+        cardsArea.getChildren().clear();
+
+        // 2. Karten zeichnen (Schleife, weil es durch Split mehrere Hände geben kann)
         cardsArea.getChildren().clear();
         for (int hIdx = 0; hIdx < s.hands.size(); hIdx++) {
             HandData h = s.hands.get(hIdx);
             VBox handCol = new VBox(5);
             handCol.setAlignment(Pos.CENTER);
 
+            // Punktestand anzeigen
             Label score = new Label(h.cards.isEmpty() ? "" : String.valueOf(h.getBestValue()));
             score.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-effect: dropshadow(one-pass-box, black, 2,0,0,1);");
 
+            // Kartenstapel (negativer Abstand sorgt für Überlappung)
             HBox pile = new HBox(-35);
             pile.setAlignment(Pos.CENTER);
             for (Card c : h.cards) {
                 pile.getChildren().add(new CardView(c));
             }
-
+            // Status-Text (z.B. "WIN" oder "BUST")
             Label status = new Label();
             status.textProperty().bind(h.statusMsg);
             status.setStyle("-fx-text-fill: #f1c40f; -fx-font-weight: bold; -fx-font-size: 10px; -fx-effect: dropshadow(one-pass-box, black, 2,0,0,1);");
-
+            // Wenn diese Hand gerade aktiv gespielt wird -> Goldener Schein
             if (s.isActiveSeat.get() && s.activeHandIndex.get() == hIdx) {
                 pile.setStyle("-fx-effect: dropshadow(three-pass-box, gold, 15, 0, 0, 0);");
             }
@@ -310,27 +340,33 @@ public class BlackjackRoyale extends Application {
         }
     }
 
+    /*
+     * Erstellt das Startmenü (Overlay).
+     * Legt sich über das Spielfeld und macht den Hintergrund unscharf.
+     */
     private void showStartScreen() {
         overlayLayer.getChildren().clear();
-        overlayLayer.setPickOnBounds(true);
-        tableLayer.setEffect(new GaussianBlur(15));
+        overlayLayer.setPickOnBounds(true); // Aktiviert Mausklicks auf dem Overlay (blockiert das Spiel dahinter)
+        tableLayer.setEffect(new GaussianBlur(15)); // Optischer Effekt: Der Spieltisch im Hintergrund wird unscharf
 
+        // Halb-transparenter schwarzer Hintergrund
         StackPane bg = new StackPane();
         bg.setStyle("-fx-background-color: rgba(0,0,0,0.7);");
 
+        // Weiße Box mit Titel und Buttons
         VBox box = Styles.createWhiteModalBox();
         Text logo = new Text("BlackJack Royale");
         logo.setFont(Font.font("Arial", FontWeight.BOLD, 30));
-
+        // Start Button
         Button start = Styles.createModalButton("Start Game", "CONFIRM");
         start.setOnAction(e -> {
             closeOverlay();
             startBetting();
         });
-
+        // Regel Button
         Button rules = Styles.createModalButton("Rules", "GREY");
         rules.setOnAction(e -> showRules());
-
+        // Exit Button
         Button exit = Styles.createModalButton("Exit", "CANCEL");
         exit.setOnAction(e -> Platform.exit());
 
