@@ -1,5 +1,9 @@
-package blackjack;
+package at.ac.hcw.blackjacksw;
 
+import at.ac.hcw.blackjacksw.Rank;
+import at.ac.hcw.blackjacksw.Suit;
+
+import javax.smartcardio.Card;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

@@ -1,5 +1,6 @@
-package blackjack;
+package at.ac.hcw.blackjacksw;
 
+import at.ac.hcw.blackjacksw.Styles;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
