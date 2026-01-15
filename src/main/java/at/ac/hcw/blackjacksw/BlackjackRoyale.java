@@ -81,41 +81,50 @@ public class BlackjackRoyale extends Application {
     }
 
     private void buildTable() {
+        // Tisch erstellen (Ellipse) und Stil setzen
         Ellipse table = new Ellipse(512, 320, 480, 270);
         table.setFill(javafx.scene.paint.Color.web(Styles.TABLE_FILL));
         table.setStroke(javafx.scene.paint.Color.web(Styles.TABLE_STROKE));
         table.setStrokeWidth(8);
 
+        // Tisch in Container packen und zur TableLayer hinzufügen
         StackPane tableContainer = new StackPane(table);
         tableContainer.setPrefSize(1024, 640);
         tableLayer.getChildren().add(tableContainer);
 
+        // Exit-Button erstellen
         javafx.scene.control.Button exit = new javafx.scene.control.Button("Exit");
         exit.setStyle("-fx-background-color: white; -fx-text-fill: #c0392b; " +
                 "-fx-background-radius: 20; -fx-font-weight: bold; -fx-cursor: hand;");
         exit.setOnAction(e -> Platform.exit());
 
+        // Rules-Button erstellen
         javafx.scene.control.Button rules = new javafx.scene.control.Button("Rules");
         rules.setStyle("-fx-background-color: white; -fx-text-fill: #2c3e50; " +
                 "-fx-background-radius: 20; -fx-font-weight: bold; -fx-cursor: hand;");
         rules.setOnAction(e -> showRules());
 
+        // Buttons positionieren
         AnchorPane.setTopAnchor(exit, 30.0);
         AnchorPane.setLeftAnchor(exit, 30.0);
         AnchorPane.setTopAnchor(rules, 30.0);
         AnchorPane.setRightAnchor(rules, 30.0);
 
+        // Info-Box für Hinweise, Balance und Deal-Button
         VBox info = new VBox(8);
         info.setAlignment(Pos.CENTER);
 
+        // Info: Auszahlungstext
         javafx.scene.control.Label pay = new javafx.scene.control.Label("Blackjack pays 3:2");
         pay.setTextFill(javafx.scene.paint.Color.web("#8daead"));
         pay.setFont(javafx.scene.text.Font.font("Arial", 16));
 
+        // Label für Nachrichten im Spiel
         messageLbl = new javafx.scene.control.Label();
         messageLbl.setTextFill(Color.WHITE);
         messageLbl.setFont(javafx.scene.text.Font.font("Arial", 16));
 
+        // Deal-Button erstellen (anfangs unsichtbar)
         btnDeal = new javafx.scene.control.Button("DEAL NOW");
         btnDeal.setStyle("-fx-background-color: #f1c40f; -fx-text-fill: black; -fx-font-weight: bold; " +
                 "-fx-background-radius: 20; -fx-padding: 5 15; -fx-cursor: hand; " +
@@ -127,28 +136,33 @@ public class BlackjackRoyale extends Application {
         info.setLayoutX(440);
         info.setLayoutY(70);
 
+        // Label für Dealer
         javafx.scene.control.Label dTag = new javafx.scene.control.Label("Dealer");
         dTag.setStyle("-fx-background-color: #dcece8; -fx-text-fill: #2c3e50; " +
                 "-fx-padding: 4 12; -fx-background-radius: 12; -fx-font-weight: bold;");
         dTag.setLayoutX(485);
         dTag.setLayoutY(160);
 
+        // Label für Dealer-Punktzahl
         dealerScoreLbl = new javafx.scene.control.Label();
         dealerScoreLbl.setTextFill(javafx.scene.paint.Color.WHITE);
         dealerScoreLbl.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 12));
         dealerScoreLbl.setLayoutX(500);
         dealerScoreLbl.setLayoutY(140);
 
+        // Box für Dealer-Karten
         dealerCardBox = new HBox(-20);
         dealerCardBox.setAlignment(Pos.CENTER);
         dealerCardBox.setLayoutX(460);
         dealerCardBox.setLayoutY(190);
 
+        // Sitze erstellen und positionieren
         double[][] pos = {{150, 300}, {280, 380}, {470, 420}, {660, 380}, {790, 300}};
         for (int i = 0; i < 5; i++) {
             createSeatUI(i, pos[i][0], pos[i][1]);
         }
 
+        // Label für Spieler-Balance
         javafx.scene.control.Label bal = new javafx.scene.control.Label();
         bal.textProperty().bind(Bindings.concat("Your Balance: ", balance));
         bal.setTextFill(Color.WHITE);
@@ -156,8 +170,10 @@ public class BlackjackRoyale extends Application {
         AnchorPane.setBottomAnchor(bal, 20.0);
         AnchorPane.setLeftAnchor(bal, 30.0);
 
+        // Alle Elemente zum TableLayer hinzufügen
         tableLayer.getChildren().addAll(exit, rules, info, dTag, dealerScoreLbl, dealerCardBox, bal);
     }
+
     //UI für jeden sitzplatz einzeln
     private void createSeatUI(int idx, double x, double y) {
         SeatModel seat = seats[idx];
@@ -380,24 +396,34 @@ public class BlackjackRoyale extends Application {
 
 
     private void showBetModal(int seatIdx) {
+        // Hintergrund unscharf machen
         tableLayer.setEffect(new GaussianBlur(15));
+
+        // Overlay erstellen (halbtransparent)
         StackPane overlay = new StackPane();
         overlay.setStyle("-fx-background-color: rgba(0,0,0,0.5);");
 
+        // Box für Inhalt
         VBox box = Styles.createWhiteModalBox();
+
+        // Überschrift
         javafx.scene.control.Label title = new javafx.scene.control.Label("Place Bet");
         title.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 18));
 
+        // Anzeige des aktuellen Guthabens
         javafx.scene.control.Label bal = new javafx.scene.control.Label("Your balance: " + balance.get());
         bal.setTextFill(Color.GRAY);
 
+        // Temporärer Einsatz, damit man noch ändern kann
         IntegerProperty tempBet = new SimpleIntegerProperty(seats[seatIdx].getMainHand().bet.get());
+
+        // Chips zum Wetten erstellen
         HBox chips = new HBox(15);
         chips.setAlignment(Pos.CENTER);
         int[] values = {5, 10, 25, 50, 100};
-
         for (int val : values) {
             ChipView cv = new ChipView(val, 50, true);
+            // Beim Klick auf Chip: Einsatz erhöhen, wenn genug Geld vorhanden
             cv.setOnMouseClicked(e -> {
                 if (balance.get() >= (tempBet.get() + val - seats[seatIdx].getMainHand().bet.get())) {
                     tempBet.set(tempBet.get() + val);
@@ -406,15 +432,19 @@ public class BlackjackRoyale extends Application {
             chips.getChildren().add(cv);
         }
 
+        // Anzeige des aktuellen Einsatzes
         javafx.scene.control.Label curBet = new javafx.scene.control.Label();
         curBet.textProperty().bind(Bindings.concat("Bet size: ", tempBet));
 
+        // Buttons für "Cancel" und "Bet"
         HBox buttons = new HBox(20);
         buttons.setAlignment(Pos.CENTER);
 
+        // Cancel-Button schließt Overlay
         javafx.scene.control.Button btnCancel = Styles.createModalButton("Cancel", "CANCEL");
         btnCancel.setOnAction(e -> closeOverlay());
 
+        // Bet-Button: Einsatz bestätigen und Geld abziehen
         javafx.scene.control.Button btnBet = Styles.createModalButton("Bet", "CONFIRM");
         btnBet.setOnAction(e -> {
             int diff = tempBet.get() - seats[seatIdx].getMainHand().bet.get();
@@ -426,50 +456,66 @@ public class BlackjackRoyale extends Application {
             closeOverlay();
         });
 
+        // Buttons und alles andere zur Box hinzufügen
         buttons.getChildren().addAll(btnCancel, btnBet);
         box.getChildren().addAll(title, bal, chips, curBet, buttons);
         overlay.getChildren().add(box);
         overlayLayer.getChildren().add(overlay);
-        overlayLayer.setPickOnBounds(true);
+        overlayLayer.setPickOnBounds(true);  // Overlay klickbar machen
     }
 
     private void showGameOver() {
+        // Hintergrund unscharf machen
         tableLayer.setEffect(new GaussianBlur(15));
+
+        // Overlay erstellen (halbtransparent)
         StackPane overlay = new StackPane();
         overlay.setStyle("-fx-background-color: rgba(0,0,0,0.5);");
 
+        // Box für Inhalt
         VBox box = Styles.createWhiteModalBox();
+
+        // Überschrift
         javafx.scene.control.Label title = new javafx.scene.control.Label("Game over!");
         title.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 22));
 
+        // Untertitel
         javafx.scene.control.Label sub = new javafx.scene.control.Label("You ran out of money!");
         sub.setTextFill(Color.GRAY);
 
+        // Button zum Spiel zurücksetzen
         javafx.scene.control.Button reset = Styles.createModalButton("Reset Game", "CONFIRM");
         reset.setOnAction(e -> {
-            balance.set(100);
-            closeOverlay();
-            startBetting();
+            balance.set(100);   // Geld zurücksetzen
+            closeOverlay();     // Overlay schließen
+            startBetting();     // Neues Spiel starten
         });
 
+        // Button zum Spiel beenden
         javafx.scene.control.Button exit = Styles.createModalButton("Exit", "CANCEL");
         exit.setOnAction(e -> Platform.exit());
 
+        // Alles zusammenfügen
         box.getChildren().addAll(title, sub, reset, exit);
         overlay.getChildren().add(box);
         overlayLayer.getChildren().add(overlay);
-        overlayLayer.setPickOnBounds(true);
+        overlayLayer.setPickOnBounds(true);  // Overlay klickbar machen
     }
 
     private void showRules() {
+        // Overlay erstellen (halbtransparent, alles darüber legen)
         StackPane overlay = new StackPane();
         overlay.setStyle("-fx-background-color: rgba(0,0,0,0.6);");
         overlay.setPickOnBounds(true);
 
+        // Box für Inhalt erstellen
         VBox box = Styles.createWhiteModalBox();
+
+        // Überschrift
         javafx.scene.control.Label t = new javafx.scene.control.Label("House Rules");
         t.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 22));
 
+        // Scrollbarer Text mit Regeln
         javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane();
         javafx.scene.control.Label content = new javafx.scene.control.Label(
                 "OBJECTIVE:\nBeat the dealer's hand total without exceeding 21.\n\n" +
@@ -484,12 +530,12 @@ public class BlackjackRoyale extends Application {
         content.setWrapText(true);
         content.setFont(javafx.scene.text.Font.font("Arial", 14));
         content.setPadding(new Insets(15));
-
         sp.setContent(content);
         sp.setFitToWidth(true);
         sp.setPrefHeight(350);
         sp.setStyle("-fx-background: white; -fx-background-color: transparent;");
 
+        // Schließen-Button
         javafx.scene.control.Button cl = Styles.createModalButton("Close", "GREY");
         cl.setOnAction(e -> {
             overlayLayer.getChildren().remove(overlay);
@@ -497,6 +543,7 @@ public class BlackjackRoyale extends Application {
             if (gameState.get() == GameState.BETTING) tableLayer.setEffect(null);
         });
 
+        // Alles zusammenfügen
         box.getChildren().addAll(t, sp, cl);
         overlay.getChildren().add(box);
         overlayLayer.getChildren().add(overlay);
