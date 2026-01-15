@@ -1,4 +1,4 @@
-package blackjack;
+package at.ac.hcw.blackjacksw;
 
 // setzt state dass man nur bestimmte Sachen gerade machen kann
 enum GameState {
