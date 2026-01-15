@@ -721,6 +721,35 @@ public class BlackjackRoyale extends Application {
             // Prüft automatische Aktionen (z.B. Blackjack, Bust)
             checkHandAutoOps(seatIdx);
         }
+        private void playDealer() {
+            //Spielstatus ändern -  Dealer dran
+            gameState.set(GameState.DEALER_TURN);
+            // Verdeckte Karte aufdecken und durch echte Karte ersetzen
+            if (dealerCardBox.getChildren().size() > 1) {
+                dealerCardBox.getChildren().remove(1);
+                dealerCardBox.getChildren().add(new CardView(dealerHand.cards.get(1)));
+            }
+            // Zeigt aktuellen Punktestand des Dealers an
+            dealerScoreLbl.setText(String.valueOf(dealerHand.getBestValue()));
+            //Timeline damit Karten nacheinander kommen
+            Timeline dt = new Timeline();
+            dt.setCycleCount(Timeline.INDEFINITE); //läuft endlos bis Timer stopp
+
+            dt.getKeyFrames().add(new KeyFrame(Duration.seconds(1), e -> {
+                // REGEL: Hat der Dealer weniger als 17 Punkte?
+                if (dealerHand.getBestValue() < 17) {
+                    // JA -> Der Dealer MUSS eine Karte ziehen (Hausregel)
+                    Card c = deck.draw();
+                    dealerHand.cards.add(c); // Karte hinzufügen
+                    dealerCardBox.getChildren().add(new CardView(c)); // Karte anzeigen
+                    dealerScoreLbl.setText(String.valueOf(dealerHand.getBestValue())); // Punkte updaten
+                } else {
+                    dt.stop(); // Dealer hat 17 od. mehr -> muss aufhören ; Timer wird gestoppt
+                    resolve(); // Endabrechnung - Gewinner wird ermittelt
+                }
+            }));
+            dt.play(); // Startet Animation
+        }
     }
     public static void main(String[] args) {
         launch(args);
