@@ -1,8 +1,5 @@
 package at.ac.hcw.blackjacksw;
 
-import at.ac.hcw.blackjacksw.Rank;
-import at.ac.hcw.blackjacksw.Suit;
-
 import javax.smartcardio.Card;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,7 +35,7 @@ class Deck {
 
 
     // man zieht oberste Karte - wenn keine Karten mer dann wir ein neuer Stapel gemischt
-    public Card draw() {
+    public at.ac.hcw.blackjacksw.Card draw() {
         if (cards.isEmpty()) {
             refill();
         }

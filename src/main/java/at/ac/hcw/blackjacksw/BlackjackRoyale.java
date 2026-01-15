@@ -1,24 +1,32 @@
 package at.ac.hcw.blackjacksw;
 
-import javafx.animation.Timeline;
+import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.*;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Ellipse;
+import javafx.scene.shape.*;
+import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import java.awt.*;
 
@@ -101,7 +109,7 @@ public class BlackjackRoyale extends Application {
         pay.setFont(javafx.scene.text.Font.font("Arial", 16));
 
         messageLbl = new javafx.scene.control.Label();
-        messageLbl.setTextFill(javafx.scene.paint.Color.WHITE);
+        messageLbl.setTextFill(Color.WHITE);
         messageLbl.setFont(javafx.scene.text.Font.font("Arial", 16));
 
         btnDeal = new javafx.scene.control.Button("DEAL NOW");
@@ -460,6 +468,152 @@ public class BlackjackRoyale extends Application {
         overlayLayer.setPickOnBounds(false);
         tableLayer.setEffect(null);
     }
+
+    // Startet die Setzphase der Einsätze
+    private void startBetting() {
+        gameState.set(GameState.BETTING);
+        // ZEit verbleibend fürs Setzen der Einsätze
+        timeLeft.set(60);
+        // Deal-Button ist während der Setzphase nicht sichtbar
+        btnDeal.setVisible(false);
+        // Zeigt eine Statusmeldung
+        messageLbl.textProperty().bind(Bindings.concat("Awaiting bets... ", timeLeft.asString("%02d")));
+        // Setzt die Dealer-Hand zurück
+        dealerHand.cards.clear();
+        dealerCardBox.getChildren().clear();
+        dealerScoreLbl.setText("");
+
+        // Setzt alle Spieler-Sitzplätze zurück - entfernt alte Hände
+        for (int i = 0; i < 5; i++) {
+            seats[i].reset();
+            updateSeatVisuals(i);
+        }
+
+        // falls ein Timer noch läuft wird er gestoppt
+        if (timer != null) timer.stop();
+
+        // neuer COuntdown-Toimer (1 Sek pro Tick
+        timer = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+            timeLeft.set(timeLeft.get() - 1);
+            //Wemm Zeit abgelaufen wird Kertenverteilung gestartet
+            if (timeLeft.get() <= 0) dealCardsSequence();
+        }));
+        // Timer läuft unbegrenzt, bis er manuell gestoppt wird
+        timer.setCycleCount(Timeline.INDEFINITE);
+        timer.play();
+    }
+
+
+    // Karten werden in festgelegter Reihenfolge ausgeteilt + nur Plätze mit Einsatz bekommen Karte
+    private void dealCardsSequence() {
+
+        // checkt ob min. 1 Spieler etwas gesetzt hat
+        boolean anyBets = false;
+        for (SeatModel s : seats) {
+            if (!s.hands.isEmpty() && s.getMainHand().bet.get() > 0) anyBets = true;
+        }
+
+
+        // Ohne einsatz -> Runde wird nicht gestartet
+        if (!anyBets) {
+            timeLeft.set(60);
+            return;
+        }
+        // Stoppt den Setz-Timer und blendet den Deal-Button aus
+        timer.stop();
+        btnDeal.setVisible(false);
+
+        // Wechselt den Spielzustand in die Austeilphase
+        gameState.set(GameState.DEALING);
+        messageLbl.textProperty().unbind();
+        //Statusmeldung
+        messageLbl.setText("Cards have been dealt...");
+
+        // Zeitversatz für Kartenanimation
+        Timeline tl = new Timeline();
+        double d = 0;
+
+        // bei jeder runde können Karten and alle Spieler mit Einsatu ausgeteilt werden
+        for (int i = 0; i < 2; i++) {
+            for (int s = 0; s < 5; s++) {
+                if (seats[s].getMainHand().bet.get() > 0) {
+                    final int sIdx = s;
+                    Card c = deck.draw();
+                    // Plane die Animation für diesen Sitzplatz
+                    tl.getKeyFrames().add(new KeyFrame(Duration.seconds(d), e -> animateDealToSeat(sIdx, c)));
+                    // erhöht Zeitverrsatz für nächste Karte
+                    d += 0.2;
+                }
+            }
+            // Dealer bekommt auch Karte pro Runde
+            Card dc = deck.draw();
+            // Zweite Dealer-Karte wird verdeckt ausgeteilt
+            final boolean hidden = (i == 1);
+            tl.getKeyFrames().add(new KeyFrame(Duration.seconds(d), e -> animateDealToDealer(dc, hidden)));
+            d += 0.2;
+        }
+
+        // nachdem alle eine Karte haben, beginnt Zug vom ersten Spieler
+        tl.setOnFinished(e -> playSeat(0));
+        tl.play();
+    }
+
+    // Animation vom Austeilen der Karte zu Spieler
+    private void animateDealToSeat(int seatIdx, Card c) {
+
+        CardView cv = new CardView(c);
+
+        // Startposition außerhalb vom sichtbaren bereit
+        cv.setTranslateX(400);
+        cv.setTranslateY(-300);
+        seatCardHBoxes[seatIdx].getChildren().add(cv);
+
+        // Animation für Verschieben der Karte mit 500ms Dauer
+        TranslateTransition tt = new TranslateTransition(Duration.millis(500), cv);
+        // Ziel Spot der Karte
+        tt.setToX(0);
+        tt.setToY(0);
+        // Aktionen nach Abschluss der Anomaton
+        tt.setOnFinished(e -> {
+            //entfernt animierte Karte (nur visuelle Übergangslösung)
+            seatCardHBoxes[seatIdx].getChildren().remove(cv);
+            //Fügt karte logisch zur Spieler Hand hinzu
+            seats[seatIdx].getMainHand().cards.add(c);
+            // Aktualisierung der der Anzeige des jeweiligen Spielers
+            updateSeatVisuals(seatIdx);
+        });
+        // Start der Aninmation
+        tt.play();
+    }
+
+
+    // auch das austeilen der Karten an den Dealer muss animiert werden
+    private void animateDealToDealer(Card c, boolean hidden) {
+        //fügt karte logisch zur Dealer Hand hinzu
+        dealerHand.cards.add(c);
+        // graphische Darstellung der Karte (wenn hidden == true -> Rückseite der Karte)
+        CardView cv = new CardView(hidden ? null : c);
+        // Startposition außerhalb vom sichtbaren bereit
+        cv.setTranslateX(400);
+        cv.setTranslateY(-300);
+        dealerCardBox.getChildren().add(cv);
+
+        // Animation für Verschieben der Karte mit 300ms Dauer
+        TranslateTransition tt = new TranslateTransition(Duration.millis(300), cv);
+        // Ziel Spot der Karte
+        tt.setToX(0);
+        tt.setToY(0);
+
+        // Aktualisier Dealer Score wenn Karte offen ausgeteilt wurde
+        tt.setOnFinished(e -> {
+            if (!hidden) dealerScoreLbl.setText(String.valueOf(dealerHand.getBestValue()));
+        });
+
+        // Starten der Animation
+        tt.play();
+    }
+
+
     private void playSeat(int seatIdx) {
 
         // Überspringt Sitze ohne Einsatz
@@ -527,7 +681,7 @@ public class BlackjackRoyale extends Application {
     }
 
     //    Behandelt die Double-Down-Aktion
-//  Der Einsatz wird verdoppelt, der Spieler erhält genau eine weitere Karte und muss danach automatisch stehen.
+    //    Der Einsatz wird verdoppelt, der Spieler erhält genau eine weitere Karte und muss danach automatisch stehen.
     private void handleDouble(int seatIdx) {
         SeatModel s = seats[seatIdx];
         HandData h = s.getCurrentHand();
@@ -547,7 +701,7 @@ public class BlackjackRoyale extends Application {
         }
     }
     //    Behandelt die Split-Aktion für einen Sitz.
-// Eine Hand mit zwei gleichen Karten wird in zwei Hände aufgeteilt, jeweils mit einer neuen Karte ergänzt.
+    // Eine Hand mit zwei gleichen Karten wird in zwei Hände aufgeteilt, jeweils mit einer neuen Karte ergänzt.
     private void handleSplit(int seatIdx) {
         SeatModel s = seats[seatIdx];
         HandData h = s.getCurrentHand();
@@ -568,9 +722,7 @@ public class BlackjackRoyale extends Application {
             checkHandAutoOps(seatIdx);
         }
     }
-
-    @Override
-    public void start(Stage stage) throws Exception {
-
+    public static void main(String[] args) {
+        launch(args);
     }
 }
