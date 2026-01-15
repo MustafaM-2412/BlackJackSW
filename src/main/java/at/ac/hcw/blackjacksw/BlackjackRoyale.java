@@ -1,6 +1,25 @@
 package at.ac.hcw.blackjacksw;
 
-public class BlackjackRoyale extends Application{
+import javafx.animation.Timeline;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Ellipse;
+import javafx.scene.text.FontWeight;
+import javafx.stage.Stage;
+
+import java.awt.*;
+
+public class BlackjackRoyale extends Application {
 
     private Deck deck = new Deck();
     private IntegerProperty balance = new SimpleIntegerProperty(1000);
@@ -46,6 +65,164 @@ public class BlackjackRoyale extends Application{
         stage.show();
     }
 
+    private void buildTable() {
+        Ellipse table = new Ellipse(512, 320, 480, 270);
+        table.setFill(javafx.scene.paint.Color.web(Styles.TABLE_FILL));
+        table.setStroke(javafx.scene.paint.Color.web(Styles.TABLE_STROKE));
+        table.setStrokeWidth(8);
+
+        StackPane tableContainer = new StackPane(table);
+        tableContainer.setPrefSize(1024, 640);
+        tableLayer.getChildren().add(tableContainer);
+
+        javafx.scene.control.Button exit = new javafx.scene.control.Button("Exit");
+        exit.setStyle("-fx-background-color: white; -fx-text-fill: #c0392b; " +
+                "-fx-background-radius: 20; -fx-font-weight: bold; -fx-cursor: hand;");
+        exit.setOnAction(e -> Platform.exit());
+
+        javafx.scene.control.Button rules = new javafx.scene.control.Button("Rules");
+        rules.setStyle("-fx-background-color: white; -fx-text-fill: #2c3e50; " +
+                "-fx-background-radius: 20; -fx-font-weight: bold; -fx-cursor: hand;");
+        rules.setOnAction(e -> showRules());
+
+        AnchorPane.setTopAnchor(exit, 30.0);
+        AnchorPane.setLeftAnchor(exit, 30.0);
+        AnchorPane.setTopAnchor(rules, 30.0);
+        AnchorPane.setRightAnchor(rules, 30.0);
+
+        VBox info = new VBox(8);
+        info.setAlignment(Pos.CENTER);
+
+        javafx.scene.control.Label pay = new javafx.scene.control.Label("Blackjack pays 3:2");
+        pay.setTextFill(javafx.scene.paint.Color.web("#8daead"));
+        pay.setFont(javafx.scene.text.Font.font("Arial", 16));
+
+        messageLbl = new javafx.scene.control.Label();
+        messageLbl.setTextFill(javafx.scene.paint.Color.WHITE);
+        messageLbl.setFont(javafx.scene.text.Font.font("Arial", 16));
+
+        btnDeal = new javafx.scene.control.Button("DEAL NOW");
+        btnDeal.setStyle("-fx-background-color: #f1c40f; -fx-text-fill: black; -fx-font-weight: bold; " +
+                "-fx-background-radius: 20; -fx-padding: 5 15; -fx-cursor: hand; " +
+                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 5, 0, 0, 1);");
+        btnDeal.setVisible(false);
+        btnDeal.setOnAction(e -> dealCardsSequence());
+
+        info.getChildren().addAll(pay, messageLbl, btnDeal);
+        info.setLayoutX(440);
+        info.setLayoutY(70);
+
+        javafx.scene.control.Label dTag = new javafx.scene.control.Label("Dealer");
+        dTag.setStyle("-fx-background-color: #dcece8; -fx-text-fill: #2c3e50; " +
+                "-fx-padding: 4 12; -fx-background-radius: 12; -fx-font-weight: bold;");
+        dTag.setLayoutX(485);
+        dTag.setLayoutY(160);
+
+        dealerScoreLbl = new javafx.scene.control.Label();
+        dealerScoreLbl.setTextFill(javafx.scene.paint.Color.WHITE);
+        dealerScoreLbl.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 12));
+        dealerScoreLbl.setLayoutX(500);
+        dealerScoreLbl.setLayoutY(140);
+
+        dealerCardBox = new HBox(-20);
+        dealerCardBox.setAlignment(Pos.CENTER);
+        dealerCardBox.setLayoutX(460);
+        dealerCardBox.setLayoutY(190);
+
+        double[][] pos = {{150, 300}, {280, 380}, {470, 420}, {660, 380}, {790, 300}};
+        for (int i = 0; i < 5; i++) {
+            createSeatUI(i, pos[i][0], pos[i][1]);
+        }
+
+        javafx.scene.control.Label bal = new javafx.scene.control.Label();
+        bal.textProperty().bind(Bindings.concat("Your Balance: ", balance));
+        bal.setTextFill(Color.WHITE);
+        bal.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 18));
+        AnchorPane.setBottomAnchor(bal, 20.0);
+        AnchorPane.setLeftAnchor(bal, 30.0);
+
+        tableLayer.getChildren().addAll(exit, rules, info, dTag, dealerScoreLbl, dealerCardBox, bal);
+    }
+    //UI für jeden sitzplatz einzeln
+    private void createSeatUI(int idx, double x, double y) {
+        SeatModel seat = seats[idx];
+        //groupiert
+        Pane seatGroup = new Pane();
+        seatGroup.setLayoutX(x);
+        seatGroup.setLayoutY(y);
+        seatVisualContainers[idx] = seatGroup;
+
+
+        Circle bg = new Circle(40);
+        bg.setFill(Styles.SEAT_EMPTY_COLOR);
+        bg.setLayoutX(40);
+        bg.setLayoutY(40);
+
+        javafx.scene.control.Label pb = new javafx.scene.control.Label("Place Bet");
+        pb.setStyle(Styles.PLACE_BET_BTN_STYLE);
+        pb.setLayoutX(4);
+        pb.setLayoutY(90);
+
+        //klick
+        StackPane interact = new StackPane();
+        interact.setPrefSize(80, 80);
+        interact.setCursor(javafx.scene.Cursor.HAND);
+        interact.setOnMouseClicked(e -> {
+            //wenn bettingphase dann wettfenster
+            if (gameState.get() == GameState.BETTING) showBetModal(idx);
+        });
+
+
+        //updatemethode
+        seat.hands.addListener((javafx.collections.ListChangeListener.Change<? extends HandData> c) -> updateSeatVisuals(idx));
+        seat.getMainHand().bet.addListener((o, old, v) -> updateSeatVisuals(idx));
+
+        //Kartenanzeige
+        HBox cardsArea = new HBox(20);
+        cardsArea.setAlignment(Pos.CENTER);
+        cardsArea.setLayoutX(-60);
+        cardsArea.setLayoutY(-120);
+        cardsArea.setPrefWidth(200);
+        seatCardHBoxes[idx] = cardsArea;
+
+        //Hit stand etc bzw abstand
+        HBox actions = new HBox(8);
+        actions.setLayoutX(-50);
+        actions.setLayoutY(120);
+        actions.setPrefWidth(180);
+        actions.setAlignment(Pos.CENTER);
+
+        javafx.scene.control.Button hit = new javafx.scene.control.Button("Hit");
+        javafx.scene.control.Button stand = new javafx.scene.control.Button("Stand");
+        javafx.scene.control.Button dbl = new javafx.scene.control.Button("Double");
+        javafx.scene.control.Button split = new javafx.scene.control.Button("Split");
+
+        String actionStyle = "-fx-base: #ecf0f1; -fx-text-fill: black; -fx-background-radius: 15; " +
+                "-fx-font-size: 11px; -fx-font-weight: bold; -fx-cursor: hand; -fx-min-width: 50;";
+
+        hit.setStyle(actionStyle);
+        stand.setStyle(actionStyle);
+        dbl.setStyle(actionStyle);
+        split.setStyle(actionStyle);
+
+        hit.setOnAction(e -> handleHit(idx));
+        stand.setOnAction(e -> handleStand(idx));
+        dbl.setOnAction(e -> handleDouble(idx));
+        split.setOnAction(e -> handleSplit(idx));
+
+        actions.getChildren().addAll(hit, stand, dbl, split);
+
+        //listener für den jetzigen sitz
+        seat.isActiveSeat.addListener((o, old, active) -> {
+            if (!active) actions.setVisible(false);
+            else updateActionButtons(idx, actions, hit, dbl, split);
+        });
+        actions.setVisible(false);
+
+        // Alle Elemente zum Sitz-Group-Pane hinzufügen
+        seatGroup.getChildren().addAll(bg, pb, interact, cardsArea, actions);
+        tableLayer.getChildren().add(seatGroup);
+    }
     private void updateActionButtons(int idx, HBox container, Button hitBtn, Button dblBtn, Button splitBtn) {
         SeatModel s = seats[idx];
         if (!s.isActiveSeat.get()) return;
@@ -238,5 +415,10 @@ public class BlackjackRoyale extends Application{
             // Prüft automatische Aktionen (z.B. Blackjack, Bust)
             checkHandAutoOps(seatIdx);
         }
+    }
+
+    @Override
+    public void start(Stage stage) throws Exception {
+
     }
 }
