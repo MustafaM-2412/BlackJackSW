@@ -636,32 +636,43 @@ public class BlackjackRoyale extends Application {
         updateSeatVisuals(seatIdx);
         checkHandAutoOps(seatIdx);
     }
-
+//    Führt automatische Aktionen für eine Hand aus.
+//   z.B.  bei 21 oder Bust automatisch zu stehen.
     private void checkHandAutoOps(int seatIdx) {
         SeatModel s = seats[seatIdx];
         HandData h = s.getCurrentHand();
+        // UI aktualisieren
         updateSeatVisuals(seatIdx);
+
+        // Bei 21 oder Bust automatisch Stand ausführen
         if (h.getBestValue() >= 21) {
             Platform.runLater(() -> handleStand(seatIdx));
         }
     }
-
+//    Behandelt die Hit-Aktion für eine Hand.
     private void handleHit(int seatIdx) {
         SeatModel s = seats[seatIdx];
         HandData h = s.getCurrentHand();
+        // Eine Karte ziehen
         h.cards.add(deck.draw());
+        // ui aktualisieren
         updateSeatVisuals(seatIdx);
+        // Bei 21 oder Bust automatisch stehen
         if (h.getBestValue() >= 21) {
             handleStand(seatIdx);
         }
     }
-
+//* Behandelt die Stand-Aktion.
+// Wechselt zur nächsten Hand//Sitz
     private void handleStand(int seatIdx) {
         SeatModel s = seats[seatIdx];
+        // Falls weitere Hände vorhanden sind (Split),
+        // zur nächsten Hand wechseln
         if (s.activeHandIndex.get() < s.hands.size() - 1) {
             s.activeHandIndex.set(s.activeHandIndex.get() + 1);
             updateSeatVisuals(seatIdx);
             checkHandAutoOps(seatIdx);
+            // Andernfalls Sitz beenden und zum nächsten wechseln
         } else {
             s.isActiveSeat.set(false);
             updateSeatVisuals(seatIdx);
