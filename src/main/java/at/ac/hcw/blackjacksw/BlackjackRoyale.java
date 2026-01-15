@@ -1,24 +1,32 @@
 package at.ac.hcw.blackjacksw;
 
-import javafx.animation.Timeline;
+import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.*;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Ellipse;
+import javafx.scene.shape.*;
+import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import java.awt.*;
 
@@ -101,7 +109,7 @@ public class BlackjackRoyale extends Application {
         pay.setFont(javafx.scene.text.Font.font("Arial", 16));
 
         messageLbl = new javafx.scene.control.Label();
-        messageLbl.setTextFill(javafx.scene.paint.Color.WHITE);
+        messageLbl.setTextFill(Color.WHITE);
         messageLbl.setFont(javafx.scene.text.Font.font("Arial", 16));
 
         btnDeal = new javafx.scene.control.Button("DEAL NOW");
@@ -662,7 +670,7 @@ public class BlackjackRoyale extends Application {
     }
 
     //    Behandelt die Double-Down-Aktion
-//  Der Einsatz wird verdoppelt, der Spieler erhält genau eine weitere Karte und muss danach automatisch stehen.
+    //    Der Einsatz wird verdoppelt, der Spieler erhält genau eine weitere Karte und muss danach automatisch stehen.
     private void handleDouble(int seatIdx) {
         SeatModel s = seats[seatIdx];
         HandData h = s.getCurrentHand();
@@ -682,7 +690,7 @@ public class BlackjackRoyale extends Application {
         }
     }
     //    Behandelt die Split-Aktion für einen Sitz.
-// Eine Hand mit zwei gleichen Karten wird in zwei Hände aufgeteilt, jeweils mit einer neuen Karte ergänzt.
+    // Eine Hand mit zwei gleichen Karten wird in zwei Hände aufgeteilt, jeweils mit einer neuen Karte ergänzt.
     private void handleSplit(int seatIdx) {
         SeatModel s = seats[seatIdx];
         HandData h = s.getCurrentHand();
@@ -703,9 +711,7 @@ public class BlackjackRoyale extends Application {
             checkHandAutoOps(seatIdx);
         }
     }
-
-    @Override
-    public void start(Stage stage) throws Exception {
-
+    public static void main(String[] args) {
+        launch(args);
     }
 }
