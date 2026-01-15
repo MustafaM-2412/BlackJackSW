@@ -54,6 +54,10 @@ public class BlackjackRoyale extends Application {
     private Pane[] seatVisualContainers = new Pane[5];
     private HBox[] seatCardHBoxes = new HBox[5];
 
+    public static void main(String[] args) {
+        launch(args);
+    }
+
     @Override
     public void start(Stage stage) {
         for (int i = 0; i < 5; i++) {
@@ -721,7 +725,8 @@ public class BlackjackRoyale extends Application {
             // Prüft automatische Aktionen (z.B. Blackjack, Bust)
             checkHandAutoOps(seatIdx);
         }
-        private void playDealer() {
+    }
+    private void playDealer() {
             //Spielstatus ändern -  Dealer dran
             gameState.set(GameState.DEALER_TURN);
             // Verdeckte Karte aufdecken und durch echte Karte ersetzen
@@ -750,7 +755,6 @@ public class BlackjackRoyale extends Application {
             }));
             dt.play(); // Startet Animation
         }
-    }
 
     /*
      * Auswertung der Runde (Gewinn/Verlust).
@@ -808,8 +812,7 @@ public class BlackjackRoyale extends Application {
         });
         pt.play();
     }
-
-    public static void main(String[] args) {
-        launch(args);
-    }
 }
+
+
+
