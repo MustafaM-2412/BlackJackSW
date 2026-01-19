@@ -8,6 +8,8 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 
+
+
 //  Enthält alle relevanten Daten einer Blackjack-Hand.
 //  Karten, gesetzter Einsatz und Statusinformationen (z.B. "Busted", "Blackjack").
 
@@ -49,7 +51,13 @@ class HandData {
         return cards.size() == 2 && getBestValue() == 21;
     }
     //Prüft, ob die Hand ein gesplitet werden kann
+   // public boolean canSplit() {
+     //   return cards.size() == 2 && cards.get(0).rank == cards.get(1).rank;}
+
+
     public boolean canSplit() {
-        return cards.size() == 2 && cards.get(0).rank == cards.get(1).rank;
+        // Prüfen: Haben wir 2 Karten? UND: Ist der Wert (z.B. 10) gleich?
+        // Das erlaubt jetzt auch König (10) + Dame (10) zu splitten.
+        return cards.size() == 2 && cards.get(0).rank.value == cards.get(1).rank.value;
     }
 }

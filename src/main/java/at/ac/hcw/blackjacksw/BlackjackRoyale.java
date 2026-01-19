@@ -31,26 +31,31 @@ import java.util.List;
 import java.awt.*;
 
 public class BlackjackRoyale extends Application {
-
+    // Deck Guthaben und Game Status ersellt
     private Deck deck = new Deck();
     private IntegerProperty balance = new SimpleIntegerProperty(1000);
     private ObjectProperty<GameState> gameState = new SimpleObjectProperty<>(GameState.START_SCREEN);
-
+    // Datenmodelle für Sitzplätze und Dealer
     private SeatModel[] seats = new SeatModel[5];
     private HandData dealerHand = new HandData();
-
+    // Hauptcontainer - alles drin
     private StackPane rootLayer;
+    // beeinhaltet Spieltisch
     private AnchorPane tableLayer;
+    // für menüs - Startscreen
     private StackPane overlayLayer;
 
+    // Container für Dealer Karten, Dealer Punkte, Statusmeldungen, "Game Sarten"
     private HBox dealerCardBox;
     private Label dealerScoreLbl;
     private Label messageLbl;
     private Button btnDeal;
 
+    // TIMER Logik
     private Timeline timer;
     private IntegerProperty timeLeft = new SimpleIntegerProperty(60);
 
+    // Speichert Container für jeden sitz um die später zu updaten
     private Pane[] seatVisualContainers = new Pane[5];
     private HBox[] seatCardHBoxes = new HBox[5];
 
@@ -60,20 +65,23 @@ public class BlackjackRoyale extends Application {
 
     @Override
     public void start(Stage stage) {
+        //  Initialisiere die Datenmodelle für alle 5 Sitze
         for (int i = 0; i < 5; i++) {
             seats[i] = new SeatModel();
         }
-
+        // Layerstruktur erstellen
         rootLayer = new StackPane();
         rootLayer.setStyle("-fx-background-color: " + Styles.BG_COLOR + ";");
         tableLayer = new AnchorPane();
         overlayLayer = new StackPane();
         overlayLayer.setPickOnBounds(false);
-
+        // Spielfeld aufgebaut
         buildTable();
+        // Füge die Layer zum Root hinzu (Tisch unten, Overlay oben)
         rootLayer.getChildren().addAll(tableLayer, overlayLayer);
         showStartScreen();
 
+        // Fenster konfigurieren
         Scene scene = new Scene(rootLayer, 1024, 640);
         stage.setTitle("BlackJack Royale 2025 - Final");
         stage.setScene(scene);
@@ -105,10 +113,10 @@ public class BlackjackRoyale extends Application {
         rules.setOnAction(e -> showRules());
 
         // Buttons positionieren
-        AnchorPane.setTopAnchor(exit, 30.0);
-        AnchorPane.setLeftAnchor(exit, 30.0);
-        AnchorPane.setTopAnchor(rules, 30.0);
-        AnchorPane.setRightAnchor(rules, 30.0);
+        AnchorPane.setTopAnchor(exit, 20.0);
+        AnchorPane.setLeftAnchor(exit, 20.0);
+        AnchorPane.setTopAnchor(rules, 20.0);
+        AnchorPane.setRightAnchor(rules, 20.0);
 
         // Info-Box für Hinweise, Balance und Deal-Button
         VBox info = new VBox(8);
@@ -133,7 +141,7 @@ public class BlackjackRoyale extends Application {
         btnDeal.setOnAction(e -> dealCardsSequence());
 
         info.getChildren().addAll(pay, messageLbl, btnDeal);
-        info.setLayoutX(440);
+        info.setLayoutX(447);
         info.setLayoutY(70);
 
         // Label für Dealer
@@ -162,53 +170,58 @@ public class BlackjackRoyale extends Application {
             createSeatUI(i, pos[i][0], pos[i][1]);
         }
 
+
+
         // Label für Spieler-Balance
         javafx.scene.control.Label bal = new javafx.scene.control.Label();
         bal.textProperty().bind(Bindings.concat("Your Balance: ", balance));
         bal.setTextFill(Color.WHITE);
         bal.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 18));
         AnchorPane.setBottomAnchor(bal, 20.0);
-        AnchorPane.setLeftAnchor(bal, 30.0);
+        AnchorPane.setLeftAnchor(bal, 10.0);
 
         // Alle Elemente zum TableLayer hinzufügen
         tableLayer.getChildren().addAll(exit, rules, info, dTag, dealerScoreLbl, dealerCardBox, bal);
+        // tableLayer.getChildren().addAll(info, dTag, dealerScoreLbl, dealerCardBox, bal, exit, rules);
+
     }
 
     //UI für jeden sitzplatz einzeln
+    // Ersetze die GANZE Methode createSeatUI mit diesem Code:
     private void createSeatUI(int idx, double x, double y) {
         SeatModel seat = seats[idx];
-        //groupiert
+
+        // Haupt-Container für den Sitz
         Pane seatGroup = new Pane();
         seatGroup.setLayoutX(x);
         seatGroup.setLayoutY(y);
         seatVisualContainers[idx] = seatGroup;
 
-
+        // Hintergrund-Kreis
         Circle bg = new Circle(40);
         bg.setFill(Styles.SEAT_EMPTY_COLOR);
         bg.setLayoutX(40);
         bg.setLayoutY(40);
 
+        // Label "Place Bet"
         javafx.scene.control.Label pb = new javafx.scene.control.Label("Place Bet");
         pb.setStyle(Styles.PLACE_BET_BTN_STYLE);
         pb.setLayoutX(4);
         pb.setLayoutY(90);
 
-        //klick
+        // Klick-Bereich (Chip-Zone)
         StackPane interact = new StackPane();
         interact.setPrefSize(80, 80);
         interact.setCursor(javafx.scene.Cursor.HAND);
         interact.setOnMouseClicked(e -> {
-            //wenn bettingphase dann wettfenster
             if (gameState.get() == GameState.BETTING) showBetModal(idx);
         });
 
-
-        //updatemethode
-        seat.hands.addListener((javafx.collections.ListChangeListener.Change<? extends HandData> c) -> updateSeatVisuals(idx));
+        // Listener für Updates
+        //seat.hands.addListener((javafx.collections.ListChangeListener.Change<? extends HandData> c) -> updateSeatVisuals(idx));
         seat.getMainHand().bet.addListener((o, old, v) -> updateSeatVisuals(idx));
 
-        //Kartenanzeige
+        // Karten-Bereich
         HBox cardsArea = new HBox(20);
         cardsArea.setAlignment(Pos.CENTER);
         cardsArea.setLayoutX(-60);
@@ -216,52 +229,76 @@ public class BlackjackRoyale extends Application {
         cardsArea.setPrefWidth(200);
         seatCardHBoxes[idx] = cardsArea;
 
-        //Hit stand etc bzw abstand
-        HBox actions = new HBox(8);
-        actions.setLayoutX(-50);
-        actions.setLayoutY(120);
-        actions.setPrefWidth(180);
-        actions.setAlignment(Pos.CENTER);
+        // --- HIER IST DAS NEUE BUTTON-LAYOUT ---
 
+        // Buttons erstellen
         javafx.scene.control.Button hit = new javafx.scene.control.Button("Hit");
         javafx.scene.control.Button stand = new javafx.scene.control.Button("Stand");
         javafx.scene.control.Button dbl = new javafx.scene.control.Button("Double");
         javafx.scene.control.Button split = new javafx.scene.control.Button("Split");
 
+        // Styling
         String actionStyle = "-fx-base: #ecf0f1; -fx-text-fill: black; -fx-background-radius: 15; " +
                 "-fx-font-size: 11px; -fx-font-weight: bold; -fx-cursor: hand; -fx-min-width: 50;";
-
         hit.setStyle(actionStyle);
         stand.setStyle(actionStyle);
         dbl.setStyle(actionStyle);
         split.setStyle(actionStyle);
 
+        // Button-Aktionen
         hit.setOnAction(e -> handleHit(idx));
         stand.setOnAction(e -> handleStand(idx));
         dbl.setOnAction(e -> handleDouble(idx));
         split.setOnAction(e -> handleSplit(idx));
 
-        actions.getChildren().addAll(hit, stand, dbl, split);
+        // Layout bauen:
+        // 1. Obere Reihe (Hit, Stand, Double)
+        HBox topRow = new HBox(8);
+        topRow.setAlignment(Pos.CENTER);
+        topRow.getChildren().addAll(hit, stand, dbl);
 
-        //listener für den jetzigen sitz
+        // 2. Vertikale Box (Oben: Reihe, Unten: Split)
+        VBox actions = new VBox(8);
+        actions.setLayoutX(-85);
+        actions.setLayoutY(115); // Position unter dem Sitz
+        actions.setPrefWidth(200);
+        actions.setAlignment(Pos.CENTER);
+
+        // Füge beides zusammen
+        actions.getChildren().addAll(topRow, split);
+
+        // Listener für Sichtbarkeit
         seat.isActiveSeat.addListener((o, old, active) -> {
             if (!active) actions.setVisible(false);
             else updateActionButtons(idx, actions, hit, dbl, split);
         });
-        actions.setVisible(false);
+        actions.setVisible(false); // Anfangs unsichtbar
+        // Neuer Listener: Wenn gesplittet wird (Hand-Liste ändert sich), Visuals UND Buttons updaten!
+        seat.hands.addListener((javafx.collections.ListChangeListener.Change<? extends HandData> c) -> {
+            updateSeatVisuals(idx);
+            // Das ist der entscheidende Fix: Wir zwingen die Buttons, sich neu zu berechnen.
+            // Da s.hands.size() jetzt 2 ist, wird der Split-Button ausgeblendet.
+            if (seat.isActiveSeat.get()) {
+                updateActionButtons(idx, actions, hit, dbl, split);
+            }
+        });
 
         // Alle Elemente zum Sitz-Group-Pane hinzufügen
         seatGroup.getChildren().addAll(bg, pb, interact, cardsArea, actions);
         tableLayer.getChildren().add(seatGroup);
+        // Alles zusammenfügen
     }
-
     /*
      * Steuert die Buttons (Hit, Stand, Double, Split).
      * Aktiviert oder deaktiviert sie basierend auf den Spielregeln und dem Guthaben.
      */
-    private void updateActionButtons(int idx, HBox container, Button hitBtn, Button dblBtn, Button splitBtn) {
+    // Ersetze die Methodendeklaration von updateActionButtons (ca. Zeile 270)
+// ALT: private void updateActionButtons(int idx, HBox container, Button hitBtn, Button dblBtn, Button splitBtn)
+// NEU (mit "Pane" statt "HBox"):
+
+    private void updateActionButtons(int idx, Pane container, Button hitBtn, Button dblBtn, Button splitBtn) {
         SeatModel s = seats[idx];
-        // Abbruch, wenn der Sitz gar nicht am Zug ist
+
         if (!s.isActiveSeat.get()) return;
 
         HandData currentHand = s.getCurrentHand();
@@ -269,28 +306,21 @@ public class BlackjackRoyale extends Application {
 
         container.setVisible(true);
 
-        // Prüft, ob der Spieler schon 21 oder mehr Punkte hat
         boolean is21 = currentHand.getBestValue() >= 21;
 
-        // Regel: Wer 21 hat, darf keine Karte mehr ziehen
         hitBtn.setDisable(is21);
 
-        // Regel: Double Down geht nur bei den ersten 2 Karten, wenn man genug Geld hat und noch nicht bei 21 ist.
+        // Double Check
         dblBtn.setDisable(is21 || balance.get() < currentHand.bet.get() || currentHand.cards.size() > 2);
 
-        // Regel: Split ist erlaubt, wenn:
-        // 1. Die Karten den gleichen Rang haben (z.B. 8 und 8)
-        // 2. Genug Geld für den zweiten Einsatz da ist
-        // 3. Man nicht bereits gesplittet hat (wir erlauben nur max. 2 Hände)
+        // Split Check (Die Logik aus HandData wird hier benutzt)
         boolean canSplit = currentHand.canSplit() &&
                 balance.get() >= currentHand.bet.get() &&
                 s.hands.size() == 1;
 
-        // Zeige den Split-Button nur an, wenn er auch benutzt werden dar
         splitBtn.setVisible(canSplit);
         splitBtn.setManaged(canSplit);
     }
-
     /*
      * Methode für Grafik-Updates  Sitzplatzes.
      * Synchronisiert das Datenmodell (SeatModel) mit der Anzeige (Pane).
@@ -314,7 +344,7 @@ public class BlackjackRoyale extends Application {
             ChipView cv = new ChipView(totalBet > 0 ? s.getMainHand().bet.get() : 0, 45, false);
             Label l = new Label("Bet: " + totalBet);
             l.setStyle("-fx-text-fill: white; -fx-effect: dropshadow(one-pass-box, black, 2,0,0,1);");
-            l.setTranslateY(150);
+            l.setTranslateY(65);
             interact.getChildren().addAll(cv, l);
 
             // Wenn wir in der Wettphase sind und gewettet wurde -> Deal Button anzeigen
@@ -641,8 +671,15 @@ public class BlackjackRoyale extends Application {
         }
 
         // nachdem alle eine Karte haben, beginnt Zug vom ersten Spieler
-        tl.setOnFinished(e -> playSeat(0));
-        tl.play();
+        // tl.setOnFinished(e -> playSeat(0));
+        //tl.play();
+        tl.setOnFinished(e -> {
+                    // Warte kurz (0.6s), bis die letzte Karten-Animation (0.5s) sicher durch ist
+                    PauseTransition pause = new PauseTransition(Duration.seconds(0.6));
+                    pause.setOnFinished(ev -> playSeat(0));
+                    pause.play();
+                });
+    tl.play();
     }
 
     // Animation vom Austeilen der Karte zu Spieler
@@ -712,7 +749,8 @@ public class BlackjackRoyale extends Application {
             playDealer();
             return;
         }
-
+        // holt aktuellen Sitz visuell nach vorne
+        seatVisualContainers[seatIdx].toFront();
         // Aktiviert den aktuellen Sitz
         SeatModel s = seats[seatIdx];
         s.isActiveSeat.set(true);
