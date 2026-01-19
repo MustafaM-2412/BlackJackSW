@@ -15,8 +15,8 @@ import javafx.collections.ObservableList;
 
 class HandData {
     //    Liste der Karten auf der Hand.
-//    Der Einsatz (Bet) für diese Hand.
-//    Statusnachricht der Hand (z.B. "Blackjack!", "Busted").
+    //    Der Einsatz (Bet) für diese Hand.
+    //    Statusnachricht der Hand (z.B. "Blackjack!", "Busted").
     ObservableList<Card> cards = FXCollections.observableArrayList();
     IntegerProperty bet = new SimpleIntegerProperty(0);
     StringProperty statusMsg = new SimpleStringProperty("");

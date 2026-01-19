@@ -1,63 +1,58 @@
 package at.ac.hcw.blackjacksw;
 
-import javafx.animation.*;
+import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
+import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.*;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.*;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Ellipse;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import java.awt.*;
-
 public class BlackjackRoyale extends Application {
     // Deck Guthaben und Game Status ersellt
-    private Deck deck = new Deck();
-    private IntegerProperty balance = new SimpleIntegerProperty(1000);
-    private ObjectProperty<GameState> gameState = new SimpleObjectProperty<>(GameState.START_SCREEN);
+    private final Deck deck = new Deck();
+    private final IntegerProperty balance = new SimpleIntegerProperty(1000);
+    private final ObjectProperty<GameState> gameState = new SimpleObjectProperty<>(GameState.START_SCREEN);
+
     // Datenmodelle für Sitzplätze und Dealer
-    private SeatModel[] seats = new SeatModel[5];
-    private HandData dealerHand = new HandData();
+    private final SeatModel[] seats = new SeatModel[5];
+    private final HandData dealerHand = new HandData();
+    private final IntegerProperty timeLeft = new SimpleIntegerProperty(60);
+    // Speichert Container für jeden sitz um die später zu updaten
+    private final Pane[] seatVisualContainers = new Pane[5];
+    private final HBox[] seatCardHBoxes = new HBox[5];
     // Hauptcontainer - alles drin
     private StackPane rootLayer;
     // beeinhaltet Spieltisch
     private AnchorPane tableLayer;
     // für menüs - Startscreen
     private StackPane overlayLayer;
-
     // Container für Dealer Karten, Dealer Punkte, Statusmeldungen, "Game Sarten"
     private HBox dealerCardBox;
     private Label dealerScoreLbl;
     private Label messageLbl;
     private Button btnDeal;
-
     // TIMER Logik
     private Timeline timer;
-    private IntegerProperty timeLeft = new SimpleIntegerProperty(60);
-
-    // Speichert Container für jeden sitz um die später zu updaten
-    private Pane[] seatVisualContainers = new Pane[5];
-    private HBox[] seatCardHBoxes = new HBox[5];
 
     public static void main(String[] args) {
         launch(args);
@@ -82,7 +77,7 @@ public class BlackjackRoyale extends Application {
         showStartScreen();
 
         // Fenster konfigurieren
-        Scene scene = new Scene(rootLayer, 1024, 640);
+        Scene scene = new Scene(rootLayer, 1024, 700);
         stage.setTitle("BlackJack Royale 2025 - Final");
         stage.setScene(scene);
         stage.show();
@@ -169,7 +164,6 @@ public class BlackjackRoyale extends Application {
         for (int i = 0; i < 5; i++) {
             createSeatUI(i, pos[i][0], pos[i][1]);
         }
-
 
 
         // Label für Spieler-Balance
@@ -321,6 +315,7 @@ public class BlackjackRoyale extends Application {
         splitBtn.setVisible(canSplit);
         splitBtn.setManaged(canSplit);
     }
+
     /*
      * Methode für Grafik-Updates  Sitzplatzes.
      * Synchronisiert das Datenmodell (SeatModel) mit der Anzeige (Pane).
@@ -341,7 +336,7 @@ public class BlackjackRoyale extends Application {
 
         if (totalBet > 0) {
             pb.setVisible(false); // Verstecke "Place Bet" Text
-            ChipView cv = new ChipView(totalBet > 0 ? s.getMainHand().bet.get() : 0, 45, false);
+            ChipView cv = new ChipView(s.getMainHand().bet.get(), 45, false);
             Label l = new Label("Bet: " + totalBet);
             l.setStyle("-fx-text-fill: white; -fx-effect: dropshadow(one-pass-box, black, 2,0,0,1);");
             l.setTranslateY(65);
@@ -548,14 +543,32 @@ public class BlackjackRoyale extends Application {
         // Scrollbarer Text mit Regeln
         javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane();
         javafx.scene.control.Label content = new javafx.scene.control.Label(
-                "OBJECTIVE:\nBeat the dealer's hand total without exceeding 21.\n\n" +
-                        "CARD VALUES:\n- 2-10: Face value.\n- J, Q, K: 10.\n- Ace: 1 or 11.\n\n" +
-                        "THE DEAL:\nEveryone gets 2 cards. Dealer has one face down.\n\n" +
-                        "ACTIONS:\n- HIT: Take another card.\n- STAND: End turn.\n- DOUBLE: Double bet, take exactly 1 card, then stand.\n" +
-                        "- SPLIT: If 2 cards are same rank, split into 2 hands (requires equal bet). You play each hand separately.\n\n" +
-                        "DEALER:\nDealer stands on all 17s. Dealer hits on 16.\n\n" +
-                        "PAYOUTS:\nWin 1:1. Blackjack 3:2. Push means tie (bet returned).\n\n" +
-                        "BUST:\nOver 21 is an immediate loss."
+                """
+                        OBJECTIVE:
+                        Beat the dealer's hand total without exceeding 21.
+                        
+                        CARD VALUES:
+                        - 2-10: Face value.
+                        - J, Q, K: 10.
+                        - Ace: 1 or 11.
+                        
+                        THE DEAL:
+                        Everyone gets 2 cards. Dealer has one face down.
+                        
+                        ACTIONS:
+                        - HIT: Take another card.
+                        - STAND: End turn.
+                        - DOUBLE: Double bet, take exactly 1 card, then stand.
+                        - SPLIT: If 2 cards are same rank, split into 2 hands (requires equal bet). You play each hand separately.
+                        
+                        DEALER:
+                        Dealer stands on all 17s. Dealer hits on 16.
+                        
+                        PAYOUTS:
+                        Win 1:1. Blackjack 3:2. Push means tie (bet returned).
+                        
+                        BUST:
+                        Over 21 is an immediate loss."""
         );
         content.setWrapText(true);
         content.setFont(javafx.scene.text.Font.font("Arial", 14));
@@ -674,12 +687,12 @@ public class BlackjackRoyale extends Application {
         // tl.setOnFinished(e -> playSeat(0));
         //tl.play();
         tl.setOnFinished(e -> {
-                    // Warte kurz (0.6s), bis die letzte Karten-Animation (0.5s) sicher durch ist
-                    PauseTransition pause = new PauseTransition(Duration.seconds(0.6));
-                    pause.setOnFinished(ev -> playSeat(0));
-                    pause.play();
-                });
-    tl.play();
+            // Warte kurz (0.6s), bis die letzte Karten-Animation (0.5s) sicher durch ist
+            PauseTransition pause = new PauseTransition(Duration.seconds(0.6));
+            pause.setOnFinished(ev -> playSeat(0));
+            pause.play();
+        });
+        tl.play();
     }
 
     // Animation vom Austeilen der Karte zu Spieler
@@ -761,7 +774,8 @@ public class BlackjackRoyale extends Application {
         updateSeatVisuals(seatIdx);
         checkHandAutoOps(seatIdx);
     }
-//    Führt automatische Aktionen für eine Hand aus.
+
+    //    Führt automatische Aktionen für eine Hand aus.
 //   z.B.  bei 21 oder Bust automatisch zu stehen.
     private void checkHandAutoOps(int seatIdx) {
         SeatModel s = seats[seatIdx];
@@ -774,7 +788,8 @@ public class BlackjackRoyale extends Application {
             Platform.runLater(() -> handleStand(seatIdx));
         }
     }
-//    Behandelt die Hit-Aktion für eine Hand.
+
+    //    Behandelt die Hit-Aktion für eine Hand.
     private void handleHit(int seatIdx) {
         SeatModel s = seats[seatIdx];
         HandData h = s.getCurrentHand();
@@ -787,7 +802,8 @@ public class BlackjackRoyale extends Application {
             handleStand(seatIdx);
         }
     }
-//* Behandelt die Stand-Aktion.
+
+    //* Behandelt die Stand-Aktion.
 // Wechselt zur nächsten Hand//Sitz
     private void handleStand(int seatIdx) {
         SeatModel s = seats[seatIdx];
@@ -825,6 +841,7 @@ public class BlackjackRoyale extends Application {
             handleStand(seatIdx);
         }
     }
+
     //    Behandelt die Split-Aktion für einen Sitz.
     // Eine Hand mit zwei gleichen Karten wird in zwei Hände aufgeteilt, jeweils mit einer neuen Karte ergänzt.
     private void handleSplit(int seatIdx) {
@@ -847,35 +864,36 @@ public class BlackjackRoyale extends Application {
             checkHandAutoOps(seatIdx);
         }
     }
-    private void playDealer() {
-            //Spielstatus ändern -  Dealer dran
-            gameState.set(GameState.DEALER_TURN);
-            // Verdeckte Karte aufdecken und durch echte Karte ersetzen
-            if (dealerCardBox.getChildren().size() > 1) {
-                dealerCardBox.getChildren().remove(1);
-                dealerCardBox.getChildren().add(new CardView(dealerHand.cards.get(1)));
-            }
-            // Zeigt aktuellen Punktestand des Dealers an
-            dealerScoreLbl.setText(String.valueOf(dealerHand.getBestValue()));
-            //Timeline damit Karten nacheinander kommen
-            Timeline dt = new Timeline();
-            dt.setCycleCount(Timeline.INDEFINITE); //läuft endlos bis Timer stopp
 
-            dt.getKeyFrames().add(new KeyFrame(Duration.seconds(1), e -> {
-                // REGEL: Hat der Dealer weniger als 17 Punkte?
-                if (dealerHand.getBestValue() < 17) {
-                    // JA -> Der Dealer MUSS eine Karte ziehen (Hausregel)
-                    Card c = deck.draw();
-                    dealerHand.cards.add(c); // Karte hinzufügen
-                    dealerCardBox.getChildren().add(new CardView(c)); // Karte anzeigen
-                    dealerScoreLbl.setText(String.valueOf(dealerHand.getBestValue())); // Punkte updaten
-                } else {
-                    dt.stop(); // Dealer hat 17 od. mehr -> muss aufhören ; Timer wird gestoppt
-                    resolve(); // Endabrechnung - Gewinner wird ermittelt
-                }
-            }));
-            dt.play(); // Startet Animation
+    private void playDealer() {
+        //Spielstatus ändern -  Dealer dran
+        gameState.set(GameState.DEALER_TURN);
+        // Verdeckte Karte aufdecken und durch echte Karte ersetzen
+        if (dealerCardBox.getChildren().size() > 1) {
+            dealerCardBox.getChildren().remove(1);
+            dealerCardBox.getChildren().add(new CardView(dealerHand.cards.get(1)));
         }
+        // Zeigt aktuellen Punktestand des Dealers an
+        dealerScoreLbl.setText(String.valueOf(dealerHand.getBestValue()));
+        //Timeline damit Karten nacheinander kommen
+        Timeline dt = new Timeline();
+        dt.setCycleCount(Timeline.INDEFINITE); //läuft endlos bis Timer stopp
+
+        dt.getKeyFrames().add(new KeyFrame(Duration.seconds(1), e -> {
+            // REGEL: Hat der Dealer weniger als 17 Punkte?
+            if (dealerHand.getBestValue() < 17) {
+                // JA -> Der Dealer MUSS eine Karte ziehen (Hausregel)
+                Card c = deck.draw();
+                dealerHand.cards.add(c); // Karte hinzufügen
+                dealerCardBox.getChildren().add(new CardView(c)); // Karte anzeigen
+                dealerScoreLbl.setText(String.valueOf(dealerHand.getBestValue())); // Punkte updaten
+            } else {
+                dt.stop(); // Dealer hat 17 od. mehr -> muss aufhören ; Timer wird gestoppt
+                resolve(); // Endabrechnung - Gewinner wird ermittelt
+            }
+        }));
+        dt.play(); // Startet Animation
+    }
 
     /*
      * Auswertung der Runde (Gewinn/Verlust).
