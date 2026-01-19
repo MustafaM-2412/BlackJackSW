@@ -34,7 +34,7 @@ class Deck {
 
 
     // man zieht oberste Karte - wenn keine Karten mer dann wir ein neuer Stapel gemischt
-    public at.ac.hcw.blackjacksw.Card draw() {
+    public Card draw() {
         if (cards.isEmpty()) {
             refill();
         }
