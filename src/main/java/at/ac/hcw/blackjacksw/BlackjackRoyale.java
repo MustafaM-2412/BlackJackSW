@@ -6,6 +6,7 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -17,6 +18,7 @@ import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -83,8 +85,8 @@ public class BlackjackRoyale extends Application {
     private void buildTable() {
         // Tisch erstellen (Ellipse) und Stil setzen
         Ellipse table = new Ellipse(512, 320, 480, 270);
-        table.setFill(javafx.scene.paint.Color.web(Styles.TABLE_FILL));
-        table.setStroke(javafx.scene.paint.Color.web(Styles.TABLE_STROKE));
+        table.setFill(Paint.valueOf(Styles.TABLE_FILL));
+        table.setStroke(Paint.valueOf(Styles.TABLE_STROKE));
         table.setStrokeWidth(8);
 
         // Tisch in Container packen und zur TableLayer hinzufügen
@@ -93,13 +95,13 @@ public class BlackjackRoyale extends Application {
         tableLayer.getChildren().add(tableContainer);
 
         // Exit-Button erstellen
-        javafx.scene.control.Button exit = new javafx.scene.control.Button("Exit");
+        Button exit = new Button("Exit");
         exit.setStyle("-fx-background-color: white; -fx-text-fill: #c0392b; " +
                 "-fx-background-radius: 20; -fx-font-weight: bold; -fx-cursor: hand;");
         exit.setOnAction(e -> Platform.exit());
 
         // Rules-Button erstellen
-        javafx.scene.control.Button rules = new javafx.scene.control.Button("Rules");
+        Button rules = new Button("Rules");
         rules.setStyle("-fx-background-color: white; -fx-text-fill: #2c3e50; " +
                 "-fx-background-radius: 20; -fx-font-weight: bold; -fx-cursor: hand;");
         rules.setOnAction(e -> showRules());
@@ -115,17 +117,17 @@ public class BlackjackRoyale extends Application {
         info.setAlignment(Pos.CENTER);
 
         // Info: Auszahlungstext
-        javafx.scene.control.Label pay = new javafx.scene.control.Label("Blackjack pays 3:2");
-        pay.setTextFill(javafx.scene.paint.Color.web("#8daead"));
-        pay.setFont(javafx.scene.text.Font.font("Arial", 16));
+        Label pay = new Label("Blackjack pays 3:2");
+        pay.setTextFill(Color.web("#8daead"));
+        pay.setFont(Font.font("Arial", 16));
 
         // Label für Nachrichten im Spiel
-        messageLbl = new javafx.scene.control.Label();
+        messageLbl = new Label();
         messageLbl.setTextFill(Color.WHITE);
         messageLbl.setFont(javafx.scene.text.Font.font("Arial", 16));
 
         // Deal-Button erstellen (anfangs unsichtbar)
-        btnDeal = new javafx.scene.control.Button("DEAL NOW");
+        btnDeal = new Button("DEAL NOW");
         btnDeal.setStyle("-fx-background-color: #f1c40f; -fx-text-fill: black; -fx-font-weight: bold; " +
                 "-fx-background-radius: 20; -fx-padding: 5 15; -fx-cursor: hand; " +
                 "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 5, 0, 0, 1);");
@@ -137,16 +139,16 @@ public class BlackjackRoyale extends Application {
         info.setLayoutY(70);
 
         // Label für Dealer
-        javafx.scene.control.Label dTag = new javafx.scene.control.Label("Dealer");
+        Label dTag = new Label("Dealer");
         dTag.setStyle("-fx-background-color: #dcece8; -fx-text-fill: #2c3e50; " +
                 "-fx-padding: 4 12; -fx-background-radius: 12; -fx-font-weight: bold;");
         dTag.setLayoutX(485);
         dTag.setLayoutY(160);
 
         // Label für Dealer-Punktzahl
-        dealerScoreLbl = new javafx.scene.control.Label();
-        dealerScoreLbl.setTextFill(javafx.scene.paint.Color.WHITE);
-        dealerScoreLbl.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 12));
+        dealerScoreLbl = new Label();
+        dealerScoreLbl.setTextFill(Color.WHITE);
+        dealerScoreLbl.setFont(Font.font("Arial", FontWeight.BOLD, 12));
         dealerScoreLbl.setLayoutX(500);
         dealerScoreLbl.setLayoutY(140);
 
@@ -163,10 +165,10 @@ public class BlackjackRoyale extends Application {
         }
 
         // Label für Spieler-Balance
-        javafx.scene.control.Label bal = new javafx.scene.control.Label();
+        Label bal = new Label();
         bal.textProperty().bind(Bindings.concat("Your Balance: ", balance));
         bal.setTextFill(Color.WHITE);
-        bal.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 18));
+        bal.setFont(Font.font("Arial", FontWeight.BOLD, 18));
         AnchorPane.setBottomAnchor(bal, 20.0);
         AnchorPane.setLeftAnchor(bal, 30.0);
 
@@ -189,7 +191,7 @@ public class BlackjackRoyale extends Application {
         bg.setLayoutX(40);
         bg.setLayoutY(40);
 
-        javafx.scene.control.Label pb = new javafx.scene.control.Label("Place Bet");
+        Label pb = new Label("Place Bet");
         pb.setStyle(Styles.PLACE_BET_BTN_STYLE);
         pb.setLayoutX(4);
         pb.setLayoutY(90);
@@ -205,7 +207,7 @@ public class BlackjackRoyale extends Application {
 
 
         //updatemethode
-        seat.hands.addListener((javafx.collections.ListChangeListener.Change<? extends HandData> c) -> updateSeatVisuals(idx));
+        seat.hands.addListener((ListChangeListener.Change<? extends HandData> c) -> updateSeatVisuals(idx));
         seat.getMainHand().bet.addListener((o, old, v) -> updateSeatVisuals(idx));
 
         //Kartenanzeige
@@ -223,10 +225,10 @@ public class BlackjackRoyale extends Application {
         actions.setPrefWidth(180);
         actions.setAlignment(Pos.CENTER);
 
-        javafx.scene.control.Button hit = new javafx.scene.control.Button("Hit");
-        javafx.scene.control.Button stand = new javafx.scene.control.Button("Stand");
-        javafx.scene.control.Button dbl = new javafx.scene.control.Button("Double");
-        javafx.scene.control.Button split = new javafx.scene.control.Button("Split");
+        Button hit = new Button("Hit");
+        Button stand = new Button("Stand");
+        Button dbl = new Button("Double");
+        Button split = new Button("Split");
 
         String actionStyle = "-fx-base: #ecf0f1; -fx-text-fill: black; -fx-background-radius: 15; " +
                 "-fx-font-size: 11px; -fx-font-weight: bold; -fx-cursor: hand; -fx-min-width: 50;";
@@ -407,11 +409,11 @@ public class BlackjackRoyale extends Application {
         VBox box = Styles.createWhiteModalBox();
 
         // Überschrift
-        javafx.scene.control.Label title = new javafx.scene.control.Label("Place Bet");
-        title.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 18));
+        Label title = new Label("Place Bet");
+        title.setFont(Font.font("Arial", FontWeight.BOLD, 18));
 
         // Anzeige des aktuellen Guthabens
-        javafx.scene.control.Label bal = new javafx.scene.control.Label("Your balance: " + balance.get());
+        Label bal = new javafx.scene.control.Label("Your balance: " + balance.get());
         bal.setTextFill(Color.GRAY);
 
         // Temporärer Einsatz, damit man noch ändern kann
@@ -433,7 +435,7 @@ public class BlackjackRoyale extends Application {
         }
 
         // Anzeige des aktuellen Einsatzes
-        javafx.scene.control.Label curBet = new javafx.scene.control.Label();
+        Label curBet = new Label();
         curBet.textProperty().bind(Bindings.concat("Bet size: ", tempBet));
 
         // Buttons für "Cancel" und "Bet"
@@ -441,11 +443,11 @@ public class BlackjackRoyale extends Application {
         buttons.setAlignment(Pos.CENTER);
 
         // Cancel-Button schließt Overlay
-        javafx.scene.control.Button btnCancel = Styles.createModalButton("Cancel", "CANCEL");
+        Button btnCancel = Styles.createModalButton("Cancel", "CANCEL");
         btnCancel.setOnAction(e -> closeOverlay());
 
         // Bet-Button: Einsatz bestätigen und Geld abziehen
-        javafx.scene.control.Button btnBet = Styles.createModalButton("Bet", "CONFIRM");
+        Button btnBet = Styles.createModalButton("Bet", "CONFIRM");
         btnBet.setOnAction(e -> {
             int diff = tempBet.get() - seats[seatIdx].getMainHand().bet.get();
             if (balance.get() >= diff) {
@@ -476,15 +478,15 @@ public class BlackjackRoyale extends Application {
         VBox box = Styles.createWhiteModalBox();
 
         // Überschrift
-        javafx.scene.control.Label title = new javafx.scene.control.Label("Game over!");
+        Label title = new Label("Game over!");
         title.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 22));
 
         // Untertitel
-        javafx.scene.control.Label sub = new javafx.scene.control.Label("You ran out of money!");
+        Label sub = new Label("You ran out of money!");
         sub.setTextFill(Color.GRAY);
 
         // Button zum Spiel zurücksetzen
-        javafx.scene.control.Button reset = Styles.createModalButton("Reset Game", "CONFIRM");
+        Button reset = Styles.createModalButton("Reset Game", "CONFIRM");
         reset.setOnAction(e -> {
             balance.set(100);   // Geld zurücksetzen
             closeOverlay();     // Overlay schließen
@@ -492,7 +494,7 @@ public class BlackjackRoyale extends Application {
         });
 
         // Button zum Spiel beenden
-        javafx.scene.control.Button exit = Styles.createModalButton("Exit", "CANCEL");
+        Button exit = Styles.createModalButton("Exit", "CANCEL");
         exit.setOnAction(e -> Platform.exit());
 
         // Alles zusammenfügen
@@ -512,12 +514,12 @@ public class BlackjackRoyale extends Application {
         VBox box = Styles.createWhiteModalBox();
 
         // Überschrift
-        javafx.scene.control.Label t = new javafx.scene.control.Label("House Rules");
-        t.setFont(javafx.scene.text.Font.font("Arial", FontWeight.BOLD, 22));
+        Label t = new Label("House Rules");
+        t.setFont(Font.font("Arial", FontWeight.BOLD, 22));
 
         // Scrollbarer Text mit Regeln
-        javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane();
-        javafx.scene.control.Label content = new javafx.scene.control.Label(
+        ScrollPane sp = new ScrollPane();
+        Label content = new Label(
                 "OBJECTIVE:\nBeat the dealer's hand total without exceeding 21.\n\n" +
                         "CARD VALUES:\n- 2-10: Face value.\n- J, Q, K: 10.\n- Ace: 1 or 11.\n\n" +
                         "THE DEAL:\nEveryone gets 2 cards. Dealer has one face down.\n\n" +
@@ -528,7 +530,7 @@ public class BlackjackRoyale extends Application {
                         "BUST:\nOver 21 is an immediate loss."
         );
         content.setWrapText(true);
-        content.setFont(javafx.scene.text.Font.font("Arial", 14));
+        content.setFont(Font.font("Arial", 14));
         content.setPadding(new Insets(15));
         sp.setContent(content);
         sp.setFitToWidth(true);
@@ -536,7 +538,7 @@ public class BlackjackRoyale extends Application {
         sp.setStyle("-fx-background: white; -fx-background-color: transparent;");
 
         // Schließen-Button
-        javafx.scene.control.Button cl = Styles.createModalButton("Close", "GREY");
+        Button cl = Styles.createModalButton("Close", "GREY");
         cl.setOnAction(e -> {
             overlayLayer.getChildren().remove(overlay);
             if (gameState.get() != GameState.START_SCREEN) overlayLayer.setPickOnBounds(false);
@@ -723,7 +725,8 @@ public class BlackjackRoyale extends Application {
         updateSeatVisuals(seatIdx);
         checkHandAutoOps(seatIdx);
     }
-//    Führt automatische Aktionen für eine Hand aus.
+
+    //    Führt automatische Aktionen für eine Hand aus.
 //   z.B.  bei 21 oder Bust automatisch zu stehen.
     private void checkHandAutoOps(int seatIdx) {
         SeatModel s = seats[seatIdx];
@@ -736,7 +739,8 @@ public class BlackjackRoyale extends Application {
             Platform.runLater(() -> handleStand(seatIdx));
         }
     }
-//    Behandelt die Hit-Aktion für eine Hand.
+
+    //    Behandelt die Hit-Aktion für eine Hand.
     private void handleHit(int seatIdx) {
         SeatModel s = seats[seatIdx];
         HandData h = s.getCurrentHand();
@@ -749,7 +753,8 @@ public class BlackjackRoyale extends Application {
             handleStand(seatIdx);
         }
     }
-//* Behandelt die Stand-Aktion.
+
+    //* Behandelt die Stand-Aktion.
 // Wechselt zur nächsten Hand//Sitz
     private void handleStand(int seatIdx) {
         SeatModel s = seats[seatIdx];
@@ -787,6 +792,7 @@ public class BlackjackRoyale extends Application {
             handleStand(seatIdx);
         }
     }
+
     //    Behandelt die Split-Aktion für einen Sitz.
     // Eine Hand mit zwei gleichen Karten wird in zwei Hände aufgeteilt, jeweils mit einer neuen Karte ergänzt.
     private void handleSplit(int seatIdx) {
@@ -809,35 +815,36 @@ public class BlackjackRoyale extends Application {
             checkHandAutoOps(seatIdx);
         }
     }
-    private void playDealer() {
-            //Spielstatus ändern -  Dealer dran
-            gameState.set(GameState.DEALER_TURN);
-            // Verdeckte Karte aufdecken und durch echte Karte ersetzen
-            if (dealerCardBox.getChildren().size() > 1) {
-                dealerCardBox.getChildren().remove(1);
-                dealerCardBox.getChildren().add(new CardView(dealerHand.cards.get(1)));
-            }
-            // Zeigt aktuellen Punktestand des Dealers an
-            dealerScoreLbl.setText(String.valueOf(dealerHand.getBestValue()));
-            //Timeline damit Karten nacheinander kommen
-            Timeline dt = new Timeline();
-            dt.setCycleCount(Timeline.INDEFINITE); //läuft endlos bis Timer stopp
 
-            dt.getKeyFrames().add(new KeyFrame(Duration.seconds(1), e -> {
-                // REGEL: Hat der Dealer weniger als 17 Punkte?
-                if (dealerHand.getBestValue() < 17) {
-                    // JA -> Der Dealer MUSS eine Karte ziehen (Hausregel)
-                    Card c = deck.draw();
-                    dealerHand.cards.add(c); // Karte hinzufügen
-                    dealerCardBox.getChildren().add(new CardView(c)); // Karte anzeigen
-                    dealerScoreLbl.setText(String.valueOf(dealerHand.getBestValue())); // Punkte updaten
-                } else {
-                    dt.stop(); // Dealer hat 17 od. mehr -> muss aufhören ; Timer wird gestoppt
-                    resolve(); // Endabrechnung - Gewinner wird ermittelt
-                }
-            }));
-            dt.play(); // Startet Animation
+    private void playDealer() {
+        //Spielstatus ändern -  Dealer dran
+        gameState.set(GameState.DEALER_TURN);
+        // Verdeckte Karte aufdecken und durch echte Karte ersetzen
+        if (dealerCardBox.getChildren().size() > 1) {
+            dealerCardBox.getChildren().remove(1);
+            dealerCardBox.getChildren().add(new CardView(dealerHand.cards.get(1)));
         }
+        // Zeigt aktuellen Punktestand des Dealers an
+        dealerScoreLbl.setText(String.valueOf(dealerHand.getBestValue()));
+        //Timeline damit Karten nacheinander kommen
+        Timeline dt = new Timeline();
+        dt.setCycleCount(Timeline.INDEFINITE); //läuft endlos bis Timer stopp
+
+        dt.getKeyFrames().add(new KeyFrame(Duration.seconds(1), e -> {
+            // REGEL: Hat der Dealer weniger als 17 Punkte?
+            if (dealerHand.getBestValue() < 17) {
+                // JA -> Der Dealer MUSS eine Karte ziehen (Hausregel)
+                Card c = deck.draw();
+                dealerHand.cards.add(c); // Karte hinzufügen
+                dealerCardBox.getChildren().add(new CardView(c)); // Karte anzeigen
+                dealerScoreLbl.setText(String.valueOf(dealerHand.getBestValue())); // Punkte updaten
+            } else {
+                dt.stop(); // Dealer hat 17 od. mehr -> muss aufhören ; Timer wird gestoppt
+                resolve(); // Endabrechnung - Gewinner wird ermittelt
+            }
+        }));
+        dt.play(); // Startet Animation
+    }
 
     /*
      * Auswertung der Runde (Gewinn/Verlust).

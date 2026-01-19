@@ -44,10 +44,12 @@ class HandData {
     public boolean isBusted() {
         return getBestValue() > 21;
     }
+
     //    Prüft, ob die Hand ein Blackjack ist.
     public boolean isBlackjack() {
         return cards.size() == 2 && getBestValue() == 21;
     }
+
     //Prüft, ob die Hand ein gesplitet werden kann
     public boolean canSplit() {
         return cards.size() == 2 && cards.get(0).rank == cards.get(1).rank;

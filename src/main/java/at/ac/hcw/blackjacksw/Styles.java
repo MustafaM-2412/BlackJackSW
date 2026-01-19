@@ -21,17 +21,25 @@ class Styles {
                     "-fx-font-size: 11px; " +
                     "-fx-font-weight: bold; " +
                     "-fx-padding: 4 12;";
+
     // Farben für die Chips basierend auf dem Wert
     public static Color getChipColor(int val) {
         switch (val) {
-            case 5: return Color.web("#e74c3c");
-            case 10: return Color.web("#e91e63");
-            case 25: return Color.web("#3498db");
-            case 50: return Color.web("#9b59b6");
-            case 100: return Color.web("#f1c40f");
-            default: return Color.GRAY;
+            case 5:
+                return Color.web("#e74c3c");
+            case 10:
+                return Color.web("#e91e63");
+            case 25:
+                return Color.web("#3498db");
+            case 50:
+                return Color.web("#9b59b6");
+            case 100:
+                return Color.web("#f1c40f");
+            default:
+                return Color.GRAY;
         }
     }
+
     // Erstellt styled Knopf für Popup - ändert Farbe nach Typ (zb. Confirm - Grün)
     public static Button createModalButton(String text, String type) {
         Button b = new Button(text);
@@ -53,6 +61,7 @@ class Styles {
                 "-fx-padding: 10 30; -fx-cursor: hand;");
         return b;
     }
+
     // Erstellt "weiße Box" für Popups mit Shadow Effect
     public static VBox createWhiteModalBox() {
         VBox box = new VBox(20);
